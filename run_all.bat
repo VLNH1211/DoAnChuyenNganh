@@ -21,12 +21,12 @@ timeout /t 3 /nobreak >nul
 
 echo.
 echo ==========================================================================
-echo  Dang mo Swagger UI tren trinh duyet...
+echo  Dang mo Giao dien Web Dashboard & Simulator tren trinh duyet...
 echo ==========================================================================
-start http://localhost:5001/swagger
-start http://localhost:5002/swagger
+start http://localhost:5001
+start http://localhost:5002
 
 echo.
 echo Hoan tat! Ca 2 ung dung da duoc khoi chay.
-echo  - Swagger V1: http://localhost:5001/swagger
-echo  - Swagger V2: http://localhost:5002/swagger
+echo  - Web Dashboard V1 (Baseline): http://localhost:5001  (Swagger: /swagger)
+echo  - Web Dashboard V2 (Secure):   http://localhost:5002  (Swagger: /swagger)

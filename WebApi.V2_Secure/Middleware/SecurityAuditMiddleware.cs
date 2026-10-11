@@ -20,8 +20,8 @@ namespace WebApi.V2_Secure.Middleware
             var endpoint = context.Request.Path.Value ?? "";
             var method = context.Request.Method;
 
-            // Bỏ qua Swagger assets để tránh làm loãng Audit Log
-            if (endpoint.StartsWith("/swagger") || endpoint.StartsWith("/favicon.ico"))
+            // Chỉ audit các yêu cầu API (/api/...) để tránh làm loãng Audit Log bởi static web assets và Swagger
+            if (!endpoint.StartsWith("/api", StringComparison.OrdinalIgnoreCase))
             {
                 await _next(context);
                 return;

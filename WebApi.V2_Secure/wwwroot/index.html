@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecurityLab V2 - Hardened Secure | HUTECH ATTT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body data-version="V2">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="brand-section">
+        <div class="brand-icon">🛡️</div>
+        <div>
+          <div class="brand-title">
+            HỆ THỐNG THỰC NGHIỆM AN TOÀN THÔNG TIN
+            <span class="badge badge-green">PORT 5002</span>
+          </div>
+          <div class="brand-sub">Đồ án chuyên ngành ATTT - ĐH Công nghệ TP.HCM (HUTECH)</div>
+        </div>
+      </div>
+
+      <div class="student-badge">
+        <span>🎓 Sinh viên: <strong>Võ Lê Nhật Hoàng</strong></span>
+        <span>• MSSV: <strong>2387700017</strong></span>
+        <span>• Lớp: <strong>23DATA1</strong></span>
+      </div>
+
+      <div class="nav-actions">
+        <a href="http://localhost:5001" class="btn btn-secondary" style="border-color: #ef4444; color: #f87171;" title="Chuyển sang phiên bản V1 chưa bảo mật để đối chiếu">
+          &larr; Sang Bản V1 Baseline [5001]
+        </a>
+        <a href="/swagger" target="_blank" class="btn btn-primary" title="Mở Swagger UI gốc (có nút Authorize JWT)">
+          📜 Swagger UI (JWT Auth)
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- VERSION BANNER -->
+    <div class="version-banner">
+      <div class="banner-content">
+        <div>
+          <div class="banner-title" style="color: #34d399;">
+            🛡️ [PHIÊN BẢN V2 - ĐÃ BẢO MẬT 4 LỚP (HARDENED) | CỔNG 5002]
+          </div>
+          <div class="banner-desc">
+            Phiên bản đã triển khai hoàn chỉnh <strong>4 lớp kiểm soát bảo mật chuyên sâu</strong>, băm mật khẩu bằng BCrypt và ghi nhận Audit Log thời gian thực.
+          </div>
+        </div>
+        <div class="badges-row">
+          <span class="badge badge-green">✓ KB1: JWT Bearer (401)</span>
+          <span class="badge badge-green">✓ KB2: RBAC AdminOnly (403)</span>
+          <span class="badge badge-green">✓ KB3: Chống BOLA/IDOR (403)</span>
+          <span class="badge badge-green">✓ KB4: Validation & Parameterized (400)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KHU VỰC C: 1-CLICK KB1–KB4 SIMULATOR -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-header">
+        <div class="card-title">
+          🎯 Bảng Mô Phỏng & Kiểm Thử Nhanh 4 Kịch Bản Bảo Mật (1-Click KB1–KB4 Simulator)
+        </div>
+        <button id="btnRunAllKB" class="btn btn-primary" onclick="runAllKB()">
+          ▶ Chạy tất cả 4 kịch bản (Run All KB1–KB4)
+        </button>
+      </div>
+
+      <div class="grid-4">
+        <!-- CARD KB1 -->
+        <div class="kb-card">
+          <div>
+            <div class="kb-header">
+              <span class="kb-tag">KỊCH BẢN 1 (MT1)</span>
+              <span class="badge badge-green">Mã chặn: 401</span>
+            </div>
+            <div class="kb-title">Chưa đăng nhập gọi API</div>
+            <div class="kb-desc">Gửi yêu cầu GET không kèm JWT Token. Bản V2 chặn đứng với mã 401 Unauthorized và ghi Audit Log.</div>
+            <div class="kb-endpoint">GET /api/orders</div>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB1()">
+              Thử nghiệm KB1
+            </button>
+            <div id="kb1Result" class="kb-result"></div>
+          </div>
+        </div>
+
+        <!-- CARD KB2 -->
+        <div class="kb-card">
+          <div>
+            <div class="kb-header">
+              <span class="kb-tag">KỊCH BẢN 2 (MT2)</span>
+              <span class="badge badge-green">Mã chặn: 403</span>
+            </div>
+            <div class="kb-title">Người dùng gọi API Admin</div>
+            <div class="kb-desc">Dùng tài khoản thường (userA) gọi API Quản trị. Bản V2 kiểm tra Policy AdminOnly và chặn với mã 403 Forbidden.</div>
+            <div class="kb-endpoint">GET /api/admin/users</div>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB2()">
+              Thử nghiệm KB2
+            </button>
+            <div id="kb2Result" class="kb-result"></div>
+          </div>
+        </div>
+
+        <!-- CARD KB3 -->
+        <div class="kb-card">
+          <div>
+            <div class="kb-header">
+              <span class="kb-tag">KỊCH BẢN 3 (MT3)</span>
+              <span class="badge badge-green">Mã chặn: 403</span>
+            </div>
+            <div class="kb-title">Khai thác BOLA / IDOR</div>
+            <div class="kb-desc">userA đổi ID sang đơn #3 của userB. Bản V2 đối chiếu UserId trong Token và chặn với mã 403 Forbidden, không lộ dữ liệu.</div>
+            <div class="kb-endpoint">GET /api/orders/3</div>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB3()">
+              Thử nghiệm KB3
+            </button>
+            <div id="kb3Result" class="kb-result"></div>
+          </div>
+        </div>
+
+        <!-- CARD KB4 -->
+        <div class="kb-card">
+          <div>
+            <div class="kb-header">
+              <span class="kb-tag">KỊCH BẢN 4 (MT4)</span>
+              <span class="badge badge-green">Mã chặn: 400</span>
+            </div>
+            <div class="kb-title">Tấn công SQL Injection</div>
+            <div class="kb-desc">Gửi payload '?keyword=' OR 1=1 --'. Bản V2 áp dụng Input Validation & Parameterized Query chặn 400 Bad Request, không lỗi 500.</div>
+            <div class="kb-endpoint">GET /api/orders/search?keyword=...</div>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB4()">
+              Thử nghiệm KB4
+            </button>
+            <div id="kb4Result" class="kb-result"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="runAllSummary" style="display: none; margin-top: 14px;"></div>
+    </div>
+
+    <!-- KHU VỰC A: TRUNG TÂM ĐĂNG NHẬP 1-CLICK & GIẢI MÃ JWT TOKEN -->
+    <div class="grid-2">
+      <!-- CỘT 1: FORM LOGIN & QUICK ACCOUNTS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔐 Trung Tâm Xác Thực (1-Click Quick Login)</div>
+          <span class="badge badge-blue">POST /api/auth/login</span>
+        </div>
+
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">
+          Chọn nhanh tài khoản thử nghiệm (Tự động điền mật khẩu và cấp Token):
+        </div>
+
+        <div class="quick-accounts-grid">
+          <div class="quick-acc-btn" onclick="quickLogin('anonymous')">
+            <div class="quick-acc-name">🚫 Anonymous</div>
+            <div class="quick-acc-role">Xóa Token / Nặc danh</div>
+          </div>
+          <div class="quick-acc-btn" onclick="quickLogin('userA')">
+            <div class="quick-acc-name">👤 userA (Hoàng)</div>
+            <div class="quick-acc-role">Khách hàng (Đơn #1, #2, #5)</div>
+          </div>
+          <div class="quick-acc-btn" onclick="quickLogin('userB')">
+            <div class="quick-acc-name">👤 userB (Bích)</div>
+            <div class="quick-acc-role">Khách hàng (Đơn #3, #4)</div>
+          </div>
+          <div class="quick-acc-btn" onclick="quickLogin('staff1')">
+            <div class="quick-acc-name">👔 staff1 (Staff)</div>
+            <div class="quick-acc-role">Nhân viên (NhanVien)</div>
+          </div>
+          <div class="quick-acc-btn" onclick="quickLogin('admin')">
+            <div class="quick-acc-name">👑 admin (Quản Trị)</div>
+            <div class="quick-acc-role">Toàn quyền (Admin)</div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+          <input type="text" id="loginUsername" class="form-input" placeholder="Tên đăng nhập (username)">
+          <input type="password" id="loginPassword" class="form-input" placeholder="Mật khẩu (password)">
+          <button id="btnLogin" class="btn btn-primary" style="white-space: nowrap;" onclick="performLogin(document.getElementById('loginUsername').value, document.getElementById('loginPassword').value)">
+            Đăng nhập
+          </button>
+        </div>
+
+        <!-- SESSION STATUS -->
+        <div class="session-box">
+          <div class="session-user">
+            <div id="userAvatar" class="user-avatar">?</div>
+            <div>
+              <div id="userDisplayName" style="font-weight: 700; font-size: 0.9rem;">Chưa đăng nhập (Anonymous)</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">Trạng thái phiên làm việc hiện tại</div>
+            </div>
+          </div>
+          <span id="userRoleBadge" class="badge badge-orange">No Token</span>
+        </div>
+      </div>
+
+      <!-- CỘT 2: JWT TOKEN & DECODED CLAIMS INSPECTOR -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔍 Giải Mã JWT Token (Claims Inspector)</div>
+          <button class="btn btn-secondary btn-sm" onclick="copyToken()">📋 Sao chép Token</button>
+        </div>
+
+        <div class="form-label">JWT Bearer Token Chuỗi Thu Gọn:</div>
+        <div id="rawTokenText" class="code-box" style="max-height: 55px; margin-bottom: 12px; color: #38bdf8;">
+          (Chưa có Token được cấp)
+        </div>
+
+        <div class="form-label">Giải Mã Claims (Decoded JSON Payload):</div>
+        <div id="decodedClaimsText" class="code-box" style="max-height: 140px; color: #a7f3d0;">
+{
+  "status": "Unauthenticated",
+  "message": "Vui lòng chọn tài khoản để đăng nhập và lấy JWT Token"
+}
+        </div>
+      </div>
+    </div>
+
+    <!-- KHU VỰC B: NGHIỆP VỤ QUẢN LÝ ĐƠN HÀNG & NGƯỜI DÙNG -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="tabs-nav">
+        <button class="tab-btn active" data-tab="orders" onclick="switchTab('orders')">
+          📦 Quản Lý Đơn Hàng (/api/orders)
+        </button>
+        <button class="tab-btn" data-tab="users" onclick="switchTab('users')">
+          👥 Quản Trị Người Dùng (/api/admin/users)
+        </button>
+      </div>
+
+      <!-- TAB 1: ORDERS -->
+      <div id="tab-orders" class="tab-content active">
+        <!-- SEARCH & GET BY ID CONTROLS -->
+        <div class="grid-2" style="margin-bottom: 16px;">
+          <!-- TÌM KIẾM -->
+          <div>
+            <div class="form-label">🔎 Tìm kiếm Đơn hàng (Thử nghiệm KB4 SQL Injection):</div>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <input type="text" id="searchKeyword" class="form-input" placeholder="Nhập từ khóa tìm kiếm (Mã đơn hoặc Tên SP)...">
+              <button class="btn btn-primary" onclick="searchOrders()">Tìm</button>
+              <button class="btn btn-secondary" onclick="loadOrders()">Tải lại</button>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <span style="font-size: 0.72rem; color: var(--text-dim); align-self: center;">Mẫu thử:</span>
+              <span class="btn-tag" onclick="searchOrders('Dell')">Dell (Hợp lệ)</span>
+              <span class="btn-tag" onclick="searchOrders('Sony')">Sony (Hợp lệ)</span>
+              <span class="btn-tag" style="border-color: #ef4444; color: #f87171;" onclick="searchOrders('\' OR 1=1 --')">' OR 1=1 -- (SQLi)</span>
+              <span class="btn-tag" style="border-color: #ef4444; color: #f87171;" onclick="searchOrders('\'; DROP TABLE Orders; --')">Ký tự cấm ; --</span>
+              <span class="btn-tag" onclick="searchOrders('Chuỗi từ khóa tìm kiếm quá dài vượt quá ba mươi ký tự quy định')">&gt; 30 ký tự</span>
+            </div>
+          </div>
+
+          <!-- XEM THEO ID -->
+          <div>
+            <div class="form-label">🎯 Xem Đơn hàng theo ID (Thử nghiệm KB3 BOLA / IDOR):</div>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <input type="number" id="orderIdInput" class="form-input" placeholder="Nhập ID đơn hàng (1, 2, 3...)" value="1">
+              <button class="btn btn-primary" onclick="quickViewOrder(document.getElementById('orderIdInput').value)">Xem đơn</button>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+              <span style="font-size: 0.72rem; color: var(--text-dim); align-self: center;">Chọn nhanh:</span>
+              <span class="btn-tag" onclick="quickViewOrder(1)">Đơn #1 (userA)</span>
+              <span class="btn-tag" onclick="quickViewOrder(2)">Đơn #2 (userA)</span>
+              <span class="btn-tag" style="border-color: #f97316; color: #fb923c;" onclick="quickViewOrder(3)">Đơn #3 (userB - Test IDOR!)</span>
+              <span class="btn-tag" style="border-color: #f97316; color: #fb923c;" onclick="quickViewOrder(4)">Đơn #4 (userB - Test IDOR!)</span>
+              <span class="btn-tag" onclick="quickViewOrder(5)">Đơn #5 (userA)</span>
+            </div>
+            <div id="orderDetailView"></div>
+          </div>
+        </div>
+
+        <!-- BẢNG ĐƠN HÀNG -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <span style="font-size: 0.85rem; font-weight: 700;">Danh sách Đơn hàng trong phạm vi quyền của bạn:</span>
+            <span style="font-size: 0.75rem; color: #34d399; margin-left: 6px;">(Đã phân định phạm vi dữ liệu - Data Isolation)</span>
+          </div>
+          <span id="ordersCountBadge" class="badge badge-green">Đang tải...</span>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Mã Đơn</th>
+                <th>Khách Hàng (Owner)</th>
+                <th>Tên Sản Phẩm</th>
+                <th>Tổng Tiền</th>
+                <th>Trạng Thái</th>
+                <th>Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <tr><td colspan="7" style="text-align:center; padding: 20px;">Đang nạp dữ liệu...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: ADMIN USERS -->
+      <div id="tab-users" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div>
+            <div style="font-weight: 700;">Danh sách Người dùng Hệ thống (/api/admin/users)</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              Thử nghiệm KB2: Chỉ tài khoản có vai trò <strong>Admin</strong> mới được phép truy cập. Mật khẩu đã được mã hóa an toàn và ẩn.
+            </div>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAdminUsers()">🔄 Gọi API Admin Users</button>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tên Đăng Nhập</th>
+                <th>Họ Và Tên</th>
+                <th>Vai Trò (Role)</th>
+                <th>Mật Khẩu / Hash Status</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="5" style="text-align:center; padding: 20px;">Nhấn nút 'Gọi API Admin Users' để kiểm tra quyền truy cập...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- KHU VỰC D: LIVE HTTP INSPECTOR & AUDIT LOGS -->
+    <div class="grid-2">
+      <!-- CỘT 1: LIVE HTTP INSPECTOR -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📡 Live HTTP Request / Response Inspector</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="httpStatusCode" class="status-badge-lg status-200">READY</span>
+            <span id="httpLatency" class="badge badge-purple">0 ms</span>
+          </div>
+        </div>
+
+        <div class="http-inspector">
+          <div>
+            <div class="form-label">Yêu cầu vừa thực hiện (Request URL):</div>
+            <div id="httpMethodUrl" class="code-box" style="padding: 6px 10px; max-height: 40px; color: #38bdf8;">
+              READY
+            </div>
+          </div>
+
+          <div>
+            <div class="form-label">Request Headers:</div>
+            <div id="httpReqHeaders" class="code-box" style="padding: 6px 10px; max-height: 40px; color: #cbd5e1;">
+              Authorization: (None)
+            </div>
+          </div>
+
+          <div>
+            <div class="form-label">Dữ liệu phản hồi (Response Body):</div>
+            <div id="httpResponseBody" class="code-box" style="max-height: 220px; color: #a7f3d0;">
+{
+  "message": "Sẵn sàng gửi yêu cầu API để quan sát mã HTTP và gói tin phản hồi..."
+}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CỘT 2: SECURITY AUDIT LOGS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🛡️ Nhật Ký An Ninh & Kiểm Toán (Audit Logs)</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadAuditLogs()">🔄 Làm mới Log</button>
+        </div>
+
+        <!-- STAT COUNTERS -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;">
+          <div style="padding: 6px; text-align: center; background: rgba(255,255,255,0.03); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: #94a3b8;">Tổng sự kiện</div>
+            <div id="cntAuditTotal" style="font-size: 1.1rem; font-weight: 700; color: #fff;">0</div>
+          </div>
+          <div style="padding: 6px; text-align: center; background: rgba(249,115,22,0.1); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: #fb923c;">Chặn 401</div>
+            <div id="cntAudit401" style="font-size: 1.1rem; font-weight: 700; color: #fb923c;">0</div>
+          </div>
+          <div style="padding: 6px; text-align: center; background: rgba(239,68,68,0.1); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: #f87171;">Chặn 403</div>
+            <div id="cntAudit403" style="font-size: 1.1rem; font-weight: 700; color: #f87171;">0</div>
+          </div>
+          <div style="padding: 6px; text-align: center; background: rgba(234,179,8,0.1); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: #fde047;">Chặn 400</div>
+            <div id="cntAudit400" style="font-size: 1.1rem; font-weight: 700; color: #fde047;">0</div>
+          </div>
+        </div>
+
+        <!-- FILTER BUTTONS -->
+        <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
+          <button class="btn btn-tag" onclick="loadAuditLogs(null)">Tất cả</button>
+          <button class="btn btn-tag" onclick="loadAuditLogs(401)">Lọc 401 (KB1)</button>
+          <button class="btn btn-tag" onclick="loadAuditLogs(403)">Lọc 403 (KB2/3)</button>
+          <button class="btn btn-tag" onclick="loadAuditLogs(400)">Lọc 400 (KB4)</button>
+          <button class="btn btn-tag" onclick="loadAuditLogs(200)">Lọc 200 OK</button>
+        </div>
+
+        <div class="table-container" style="max-height: 240px; overflow-y: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Thời Điểm</th>
+                <th>Người Dùng</th>
+                <th>Endpoint</th>
+                <th>Mã</th>
+                <th>Chi Tiết Hành Động</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody id="auditLogsBody">
+              <tr><td colspan="6" style="text-align:center; padding: 15px;">Đang tải nhật ký kiểm toán...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div>
+        <strong>ĐỒ ÁN CHUYÊN NGÀNH AN TOÀN THÔNG TIN - HUTECH</strong><br>
+        Sinh viên thực hiện: <strong>Võ Lê Nhật Hoàng</strong> (MSSV: <strong>2387700017</strong> - Lớp: <strong>23DATA1</strong>)
+      </div>
+      <div>
+        Đang chạy: <strong style="color: #34d399;">WebApi.V2_Secure (Port 5002)</strong> |
+        <a href="http://localhost:5001" style="color: #f87171; margin-left: 6px;">&larr; Mở Bản V1 Baseline [5001]</a>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

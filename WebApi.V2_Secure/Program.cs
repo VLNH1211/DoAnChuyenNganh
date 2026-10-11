@@ -217,13 +217,15 @@ app.UseSwaggerUI(c =>
 
 app.UseCors("AllowAll");
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<SecurityAuditMiddleware>();
 
 app.MapControllers();
-app.MapGet("/", () => Results.Redirect("/swagger"));
 
 Console.WriteLine("==========================================================================");
 Console.WriteLine(" WebApi.V2_Secure (Hardened) đang chạy tại: http://localhost:5002");

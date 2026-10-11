@@ -24,6 +24,7 @@ Hệ thống được tổ chức hoàn chỉnh theo cấu trúc chuẩn dự á
 ├── README.md                           # Hướng dẫn tổng quan hệ thống
 │
 ├── WebApi.V1_Vulnerable/               # [PHIÊN BẢN V1 - BASELINE] (Cổng: http://localhost:5001)
+│   ├── wwwroot/                        # Giao diện Web Cyber Dashboard & Simulator V1 (Theme Cảnh báo Đỏ/Cam)
 │   ├── Controllers/                    # AuthController, OrdersController, AdminController
 │   ├── Data/                           # V1DbContext, DbInitializer (Tự động nạp CSDL SecurityLab_V1)
 │   ├── Models/                         # User, Role, Order, AuditLog
@@ -31,6 +32,7 @@ Hệ thống được tổ chức hoàn chỉnh theo cấu trúc chuẩn dự á
 │   └── Properties/launchSettings.json  # Cấu hình cổng 5001
 │
 ├── WebApi.V2_Secure/                   # [PHIÊN BẢN V2 - SECURE] (Cổng: http://localhost:5002)
+│   ├── wwwroot/                        # Giao diện Web Cyber Dashboard & Simulator V2 (Theme Bảo mật Xanh Ngọc)
 │   ├── Controllers/                    # AuthController, OrdersController, AdminController
 │   ├── Data/                           # V2DbContext, DbInitializer (Tự động nạp CSDL SecurityLab_V2)
 │   ├── Models/                         # User (Băm BCrypt), Role, Order, AuditLog
@@ -46,7 +48,7 @@ Hệ thống được tổ chức hoàn chỉnh theo cấu trúc chuẩn dự á
 │   └── Postman_Collection_KB1_KB4.json # Bộ kịch bản Postman Collection kiểm thử tự động KB1-KB4 (Assertions PASS 100%)
 │
 └── docs/
-    └── MA_TRAN_PHAN_QUYEN_VA_BAO_CAO_BEFORE_AFTER.md # Ma trận phân quyền, Bảng so sánh Before/After & Hướng dẫn quét ZAP
+    └── MA_TRAN_PHAN_QUYEN_VA_BAO_CAO_BEFORE_AFTER.md # Ma trận phân quyền, Báo cáo Before/After & Hướng dẫn quét ZAP
 ```
 
 ---

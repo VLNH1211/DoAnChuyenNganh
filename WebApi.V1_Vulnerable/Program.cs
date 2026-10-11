@@ -74,8 +74,10 @@ app.UseSwaggerUI(c =>
 
 app.UseCors("AllowAll");
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapControllers();
-app.MapGet("/", () => Results.Redirect("/swagger"));
 
 Console.WriteLine("==========================================================================");
 Console.WriteLine(" WebApi.V1_Vulnerable (Baseline) đang chạy tại: http://localhost:5001");

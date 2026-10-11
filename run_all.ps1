@@ -25,12 +25,12 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'WebAp
 
 Start-Sleep -Seconds 3
 
-Write-Host "`nĐang mở giao diện Swagger UI trên trình duyệt..."
-Start-Process "http://localhost:5001/swagger"
-Start-Process "http://localhost:5002/swagger"
+Write-Host "`nĐang mở giao diện Web Dashboard & Simulator trên trình duyệt..."
+Start-Process "http://localhost:5001"
+Start-Process "http://localhost:5002"
 
 Write-Host "`n=========================================================================="
 Write-Host " Cả 2 ứng dụng đã được khởi chạy thành công!"
-Write-Host " - Swagger UI V1: http://localhost:5001/swagger"
-Write-Host " - Swagger UI V2: http://localhost:5002/swagger"
+Write-Host " - Web Portal V1 (Baseline): http://localhost:5001  (Swagger: /swagger)"
+Write-Host " - Web Portal V2 (Secure):   http://localhost:5002  (Swagger: /swagger)"
 Write-Host "=========================================================================="
