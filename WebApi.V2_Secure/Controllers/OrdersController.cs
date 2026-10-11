@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApi.V2_Secure.Data;
 using WebApi.V2_Secure.DTOs;
+using WebApi.V2_Secure.Models;
 using WebApi.V2_Secure.Services;
 
 namespace WebApi.V2_Secure.Controllers
@@ -17,15 +18,18 @@ namespace WebApi.V2_Secure.Controllers
     {
         private readonly V2DbContext _context;
         private readonly IAuditLogService _auditLogService;
+        private readonly IRateLimitingService _rateLimitingService;
         private readonly ILogger<OrdersController> _logger;
 
         public OrdersController(
             V2DbContext context,
             IAuditLogService auditLogService,
+            IRateLimitingService rateLimitingService,
             ILogger<OrdersController> logger)
         {
             _context = context;
             _auditLogService = auditLogService;
+            _rateLimitingService = rateLimitingService;
             _logger = logger;
         }
 
@@ -60,7 +64,7 @@ namespace WebApi.V2_Secure.Controllers
             var (userId, username, role) = GetCurrentUserInfo();
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
 
-            IQueryable<Models.Order> query = _context.Orders.AsNoTracking();
+            IQueryable<Order> query = _context.Orders.AsNoTracking();
 
             // Phân định phạm vi dữ liệu an toàn theo vai trò
             if (role != "Admin" && role != "NhanVien")
@@ -114,10 +118,8 @@ namespace WebApi.V2_Secure.Controllers
             }
 
             // KIỂM TRA CHỦ SỞ HỮU (Chống IDOR / BOLA)
-            // Chỉ chủ sở hữu (UserId trùng khớp) hoặc Admin mới được phép xem đơn hàng
             if (order.UserId != userId && role != "Admin")
             {
-                // Ghi nhận sự kiện vi phạm an ninh vào Audit Log
                 await _auditLogService.LogAsync(
                     username,
                     role,
@@ -138,7 +140,6 @@ namespace WebApi.V2_Secure.Controllers
                 });
             }
 
-            // Truy cập hợp lệ
             await _auditLogService.LogAsync(
                 username,
                 role,
@@ -212,16 +213,12 @@ namespace WebApi.V2_Secure.Controllers
             }
 
             // 3. Kiểm tra ký tự nguy hiểm / Pattern SQL Injection
-            // Danh sách ký tự/từ khóa cấm: ', ", ;, --, /*, */, xp_, EXEC, UNION, OR 1=1, DROP, SELECT, INSERT
             string[] dangerousPatterns = { "'", "\"", ";", "--", "/*", "*/", "xp_", "exec", "union", "or 1=1", "drop ", "alter ", "delete ", "insert " };
             bool hasSqlInjectionPattern = dangerousPatterns.Any(p => trimmedKeyword.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0);
-
-            // Cho phép ký tự chữ cái (hỗ trợ Unicode tiếng Việt), chữ số, khoảng trắng và dấu gạch ngang
             bool isValidCharacters = Regex.IsMatch(trimmedKeyword, @"^[\p{L}\p{N}\s\-]+$");
 
             if (hasSqlInjectionPattern || !isValidCharacters)
             {
-                // Ghi nhận cảnh báo an ninh vào Audit Log
                 await _auditLogService.LogAsync(
                     username,
                     role,
@@ -241,10 +238,9 @@ namespace WebApi.V2_Secure.Controllers
                 });
             }
 
-            // 4. Thực thi an toàn bằng Parameterized EF Core LINQ
-            IQueryable<Models.Order> query = _context.Orders.AsNoTracking();
+            // 4. Parameterized EF Core LINQ
+            IQueryable<Order> query = _context.Orders.AsNoTracking();
 
-            // Vẫn áp dụng phân quyền phạm vi xem đơn hàng
             if (role != "Admin" && role != "NhanVien")
             {
                 query = query.Where(o => o.UserId == userId);
@@ -272,6 +268,465 @@ namespace WebApi.V2_Secure.Controllers
                 keyword = trimmedKeyword,
                 count = results.Count,
                 data = results
+            });
+        }
+
+        /// <summary>
+        /// V2: Tạo đơn hàng mới - Chống Mass Assignment & Kiểm soát Logic Nghiệp vụ
+        /// Tự động trích xuất UserId từ JWT Claims, bắt buộc số tiền > 0 VNĐ, trạng thái mặc định 'Pending'.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
+        {
+            var (userId, username, role) = GetCurrentUserInfo();
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    statusCode = 400,
+                    message = "Dữ liệu đầu vào không hợp lệ.",
+                    errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                });
+            }
+
+            // Kiểm tra Business Logic: Số tiền phải > 0
+            if (request.TotalAmount <= 0)
+            {
+                await _auditLogService.LogAsync(
+                    username,
+                    role,
+                    "/api/orders",
+                    "POST",
+                    400,
+                    $"[Chặn Business Logic Flaw] Người dùng '{username}' cố gắng tạo đơn hàng với số tiền không hợp lệ: {request.TotalAmount} VNĐ.",
+                    ip);
+
+                return BadRequest(new
+                {
+                    success = false,
+                    statusCode = 400,
+                    message = "[V2 - Chặn Lỗi Nghiệp Vụ] Số tiền đơn hàng phải lớn hơn 0 VNĐ.",
+                    error = "InvalidTotalAmount"
+                });
+            }
+
+            // Lấy thông tin họ tên user từ DB
+            var dbUser = await _context.Users.FindAsync(userId);
+            var customerName = dbUser?.FullName ?? username;
+
+            var newOrder = new Order
+            {
+                OrderCode = $"ORD-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}",
+                UserId = userId, // CHỐNG MASS ASSIGNMENT: Tự động gán UserId từ JWT Token
+                CustomerName = customerName,
+                ProductName = request.ProductName.Trim(),
+                TotalAmount = request.TotalAmount,
+                Status = "Pending", // Khách hàng không thể tự đặt Completed
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Orders.Add(newOrder);
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                username,
+                role,
+                "/api/orders",
+                "POST",
+                201,
+                $"[Tạo Đơn Hàng Thành Công] User '{username}' đã tạo đơn #{newOrder.Id} ({newOrder.OrderCode}) cho sản phẩm '{newOrder.ProductName}'.",
+                ip);
+
+            return StatusCode(StatusCodes.Status201Created, new
+            {
+                success = true,
+                statusCode = 201,
+                message = "[V2] Tạo đơn hàng mới thành công (Đã phòng chống Mass Assignment & Kiểm tra Logic nghiệp vụ).",
+                data = newOrder
+            });
+        }
+
+        /// <summary>
+        /// V2: Cập nhật đơn hàng - Phòng chống IDOR khi Sửa & Kiểm soát Phân quyền Trạng thái
+        /// Chỉ chủ sở hữu (hoặc Admin) mới được sửa đơn; Chỉ Admin/Staff mới được duyệt 'Completed'.
+        /// </summary>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateOrder(int id, [FromBody] UpdateOrderRequest request)
+        {
+            var (userId, username, role) = GetCurrentUserInfo();
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null)
+            {
+                return NotFound(new { success = false, statusCode = 404, message = $"Không tìm thấy đơn hàng ID={id}" });
+            }
+
+            // 1. KIỂM TRA CHỦ SỞ HỮU (Chống IDOR khi Sửa)
+            if (order.UserId != userId && role != "Admin")
+            {
+                await _auditLogService.LogAsync(
+                    username,
+                    role,
+                    $"/api/orders/{id}",
+                    "PUT",
+                    403,
+                    $"[Chặn IDOR khi Sửa] Người dùng '{username}' (UserId: {userId}) cố gắng sửa trái phép đơn hàng #{id} của UserId {order.UserId}.",
+                    ip);
+
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    success = false,
+                    statusCode = 403,
+                    message = "[V2 - Chặn IDOR khi Sửa] Truy cập bị từ chối: Bạn không phải chủ sở hữu của đơn hàng này.",
+                    error = "Forbidden_CannotEditOthersOrder"
+                });
+            }
+
+            // 2. KIỂM TRA LOGIC NGHIỆP VỤ & PHÂN QUYỀN TRẠNG THÁI
+            if (request.TotalAmount <= 0)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    statusCode = 400,
+                    message = "[V2] Số tiền đơn hàng phải lớn hơn 0 VNĐ.",
+                    error = "InvalidTotalAmount"
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Status) && request.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+            {
+                if (role != "Admin" && role != "NhanVien")
+                {
+                    await _auditLogService.LogAsync(
+                        username,
+                        role,
+                        $"/api/orders/{id}",
+                        "PUT",
+                        403,
+                        $"[Chặn Vượt Quyền Trạng Thái] Khách hàng '{username}' cố gắng tự thăng hạng đơn #{id} thành 'Completed'.",
+                        ip);
+
+                    return StatusCode(StatusCodes.Status403Forbidden, new
+                    {
+                        success = false,
+                        statusCode = 403,
+                        message = "[V2 - Phân Quyền Trạng Thái] Chỉ Quản trị viên (Admin) hoặc Nhân viên mới có quyền duyệt hoàn tất (Completed) đơn hàng.",
+                        error = "Forbidden_StatusTransitionRestricted"
+                    });
+                }
+                order.Status = "Completed";
+            }
+            else if (!string.IsNullOrWhiteSpace(request.Status))
+            {
+                order.Status = request.Status;
+            }
+
+            order.ProductName = request.ProductName.Trim();
+            order.TotalAmount = request.TotalAmount;
+
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                username,
+                role,
+                $"/api/orders/{id}",
+                "PUT",
+                200,
+                $"[Cập nhật Đơn Hàng Thành Công] User '{username}' cập nhật đơn hàng #{id}.",
+                ip);
+
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = $"[V2] Cập nhật đơn hàng #{id} thành công (Đã xác minh quyền sở hữu và logic nghiệp vụ).",
+                data = order
+            });
+        }
+
+        /// <summary>
+        /// V2: Hủy/Xóa đơn hàng - Phòng chống IDOR khi Xóa
+        /// Chỉ chủ sở hữu (hoặc Admin) mới được phép hủy đơn hàng.
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteOrder(int id)
+        {
+            var (userId, username, role) = GetCurrentUserInfo();
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null)
+            {
+                return NotFound(new { success = false, statusCode = 404, message = $"Không tìm thấy đơn hàng ID={id}" });
+            }
+
+            // KIỂM TRA CHỦ SỞ HỮU (Chống IDOR khi Xóa)
+            if (order.UserId != userId && role != "Admin")
+            {
+                await _auditLogService.LogAsync(
+                    username,
+                    role,
+                    $"/api/orders/{id}",
+                    "DELETE",
+                    403,
+                    $"[Chặn IDOR khi Xóa] Người dùng '{username}' (UserId: {userId}) cố gắng xóa trái phép đơn hàng #{id} của UserId {order.UserId}.",
+                    ip);
+
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    success = false,
+                    statusCode = 403,
+                    message = "[V2 - Chặn IDOR khi Xóa] Truy cập bị từ chối: Bạn không có quyền hủy/xóa đơn hàng của người khác.",
+                    error = "Forbidden_CannotDeleteOthersOrder"
+                });
+            }
+
+            _context.Orders.Remove(order);
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                username,
+                role,
+                $"/api/orders/{id}",
+                "DELETE",
+                200,
+                $"[Xóa Đơn Hàng Thành Công] User '{username}' đã xóa/hủy đơn hàng #{id}.",
+                ip);
+
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = $"[V2] Đã xóa/hủy đơn hàng #{id} thành công (Đã xác thực quyền sở hữu hợp lệ)."
+            });
+        }
+
+        /// <summary>
+        /// V2: Tải lên Chứng từ / Hóa đơn - Kiểm tra Quyền sở hữu, Chữ ký Byte (Magic Bytes) & Chống Path Traversal
+        /// Chỉ cho phép .jpg, .png, .pdf; Bắt buộc kiểm tra chữ ký byte thực tế đầu tệp.
+        /// </summary>
+        [HttpPost("{id}/upload")]
+        public async Task<IActionResult> UploadAttachment(int id, [FromForm] IFormFile? file)
+        {
+            var (userId, username, role) = GetCurrentUserInfo();
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null)
+            {
+                return NotFound(new { success = false, statusCode = 404, message = $"Không tìm thấy đơn hàng ID={id}" });
+            }
+
+            // 1. Kiểm tra quyền sở hữu đơn hàng
+            if (order.UserId != userId && role != "Admin")
+            {
+                await _auditLogService.LogAsync(
+                    username,
+                    role,
+                    $"/api/orders/{id}/upload",
+                    "POST",
+                    403,
+                    $"[Chặn Upload Trái Phép] User '{username}' cố tình upload file vào đơn #{id} của người khác.",
+                    ip);
+
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    success = false,
+                    statusCode = 403,
+                    message = "Bạn không có quyền tải tài liệu lên đơn hàng này.",
+                    error = "Forbidden_CannotUploadToOthersOrder"
+                });
+            }
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { success = false, statusCode = 400, message = "Vui lòng chọn tệp tin cần tải lên." });
+            }
+
+            // Giới hạn dung lượng tối đa 5MB
+            if (file.Length > 5 * 1024 * 1024)
+            {
+                return BadRequest(new { success = false, statusCode = 400, message = "Dung lượng tệp tin vượt quá giới hạn 5MB." });
+            }
+
+            var originalFileName = file.FileName;
+
+            // 2. Chống Path Traversal & Tên tệp nguy hiểm
+            if (originalFileName.Contains("..") || originalFileName.Contains("/") || originalFileName.Contains("\\"))
+            {
+                await _auditLogService.LogAsync(
+                    username,
+                    role,
+                    $"/api/orders/{id}/upload",
+                    "POST",
+                    400,
+                    $"[Chặn Path Traversal] Tên tệp '{originalFileName}' chứa ký tự điều hướng thư mục nguy hiểm.",
+                    ip);
+
+                return BadRequest(new
+                {
+                    success = false,
+                    statusCode = 400,
+                    message = "[V2 - Chặn Path Traversal] Tên tệp tin không hợp lệ: Chứa ký tự điều hướng thư mục nguy hiểm.",
+                    error = "PathTraversalDetected"
+                });
+            }
+
+            // 3. Chống Double Extension (Ví dụ: webshell.jpg.aspx hoặc evil.png.exe)
+            var lowerFileName = originalFileName.ToLowerInvariant();
+            string[] dangerousExts = { ".aspx", ".exe", ".sh", ".php", ".bat", ".cmd", ".ps1", ".vbs", ".jsp" };
+            if (dangerousExts.Any(ext => lowerFileName.Contains(ext)))
+            {
+                await _auditLogService.LogAsync(
+                    username,
+                    role,
+                    $"/api/orders/{id}/upload",
+                    "POST",
+                    400,
+                    $"[Chặn Tệp Độc Hại] Phát hiện đuôi mở rộng thực thi nguy hiểm trong tên tệp: '{originalFileName}'.",
+                    ip);
+
+                return BadRequest(new
+                {
+                    success = false,
+                    statusCode = 400,
+                    message = "[V2 - Chặn Tệp Độc Hại] Phát hiện đuôi mở rộng thực thi nguy hiểm hoặc kỹ thuật Double Extension.",
+                    error = "DangerousFileExtensionDetected"
+                });
+            }
+
+            var ext = Path.GetExtension(originalFileName).ToLowerInvariant();
+            string[] allowedExts = { ".jpg", ".jpeg", ".png", ".pdf" };
+            if (!allowedExts.Contains(ext))
+            {
+                return StatusCode(StatusCodes.Status415UnsupportedMediaType, new
+                {
+                    success = false,
+                    statusCode = 415,
+                    message = "[V2] Định dạng tệp không được hỗ trợ. Chỉ chấp nhận các định dạng ảnh/chứng từ: .jpg, .png, .pdf.",
+                    error = "UnsupportedMediaType"
+                });
+            }
+
+            // 4. KIỂM TRA CHỮ KÝ BYTE THỰC TẾ (MAGIC BYTES VALIDATION)
+            using var stream = file.OpenReadStream();
+            var headerBytes = new byte[8];
+            var bytesRead = await stream.ReadAsync(headerBytes, 0, headerBytes.Length);
+
+            bool isSignatureValid = false;
+            string detectedType = "Unknown";
+
+            if (bytesRead >= 3 && headerBytes[0] == 0xFF && headerBytes[1] == 0xD8 && headerBytes[2] == 0xFF)
+            {
+                // JPG/JPEG magic bytes: FF D8 FF
+                isSignatureValid = (ext == ".jpg" || ext == ".jpeg");
+                detectedType = "image/jpeg";
+            }
+            else if (bytesRead >= 4 && headerBytes[0] == 0x89 && headerBytes[1] == 0x50 && headerBytes[2] == 0x4E && headerBytes[3] == 0x47)
+            {
+                // PNG magic bytes: 89 50 4E 47
+                isSignatureValid = (ext == ".png");
+                detectedType = "image/png";
+            }
+            else if (bytesRead >= 4 && headerBytes[0] == 0x25 && headerBytes[1] == 0x50 && headerBytes[2] == 0x44 && headerBytes[3] == 0x46)
+            {
+                // PDF magic bytes: 25 50 44 46 (%PDF)
+                isSignatureValid = (ext == ".pdf");
+                detectedType = "application/pdf";
+            }
+
+            if (!isSignatureValid)
+            {
+                await _auditLogService.LogAsync(
+                    username,
+                    role,
+                    $"/api/orders/{id}/upload",
+                    "POST",
+                    415,
+                    $"[Chặn Giả Mạo Magic Bytes] Tệp '{originalFileName}' khai báo đuôi '{ext}' nhưng chữ ký byte thực tế không khớp hoặc chứa mã độc.",
+                    ip);
+
+                return StatusCode(StatusCodes.Status415UnsupportedMediaType, new
+                {
+                    success = false,
+                    statusCode = 415,
+                    message = "[V2 - Chặn Giả Mạo Magic Bytes] Phát hiện nội dung tệp tin không khớp với phần mở rộng hoặc giả mạo định dạng. Tệp bị từ chối để ngăn chặn mã độc Webshell / RCE.",
+                    error = "MagicBytesMismatch",
+                    declaredExtension = ext,
+                    detectedSignature = BitConverter.ToString(headerBytes, 0, Math.Min(bytesRead, 4))
+                });
+            }
+
+            // Đổi tên tệp lưu trữ thành GUID ngẫu nhiên an toàn
+            var safeStoredFileName = $"{Guid.NewGuid()}{ext}";
+
+            await _auditLogService.LogAsync(
+                username,
+                role,
+                $"/api/orders/{id}/upload",
+                "POST",
+                200,
+                $"[Upload Thành Công] Tải lên chứng từ an toàn '{originalFileName}' (Lưu trữ: {safeStoredFileName}) cho đơn #{id}.",
+                ip);
+
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = "[V2 - Upload An Toàn] Tải lên chứng từ thành công (Đã kiểm tra Magic Bytes, chống Double Extension & Path Traversal).",
+                originalFileName,
+                safeStoredFileName,
+                fileSize = file.Length,
+                mimeType = detectedType
+            });
+        }
+
+        /// <summary>
+        /// V2: Endpoint kiểm thử Rate Limiting & Chống Spam API (Tối đa 5 req / 5s)
+        /// Vượt ngưỡng sẽ trả về 429 Too Many Requests kèm Retry-After Header.
+        /// </summary>
+        [HttpGet("rate-test")]
+        public async Task<IActionResult> RateLimitTest()
+        {
+            var (userId, username, role) = GetCurrentUserInfo();
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+            var rateKey = $"ratetest:{ip}:{userId}";
+
+            // Giới hạn 5 yêu cầu trong 5 giây
+            if (!_rateLimitingService.IsAllowed(rateKey, 5, TimeSpan.FromSeconds(5), out int retryAfter))
+            {
+                Response.Headers["Retry-After"] = retryAfter.ToString();
+
+                await _auditLogService.LogAsync(
+                    username,
+                    role,
+                    "/api/orders/rate-test",
+                    "GET",
+                    429,
+                    $"[Chặn Rate Limit] User '{username}' (IP: {ip}) gửi yêu cầu vượt ngưỡng 5 requests / 5 giây. Chặn tạm thời {retryAfter}s.",
+                    ip);
+
+                return StatusCode(StatusCodes.Status429TooManyRequests, new
+                {
+                    success = false,
+                    statusCode = 429,
+                    message = $"[V2 - Chặn Rate Limit] Quá nhiều yêu cầu được gửi trong thời gian ngắn (Vượt ngưỡng 5 req / 5s). Vui lòng thử lại sau {retryAfter} giây.",
+                    error = "RateLimitExceeded",
+                    retryAfterSeconds = retryAfter
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = "[V2 - Trong Ngưỡng Cho Phép] Yêu cầu hợp lệ, tần suất gọi API nằm trong hạn mức an toàn.",
+                userContext = new { username, role }
             });
         }
     }

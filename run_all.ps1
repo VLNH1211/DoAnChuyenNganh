@@ -16,12 +16,12 @@ foreach ($port in $ports) {
 }
 
 Write-Host "[2/3] Đang khởi chạy WebApi.V1_Vulnerable tại http://localhost:5001..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'WebApi.V1_Vulnerable (Baseline) - Cổng 5001' -ForegroundColor Yellow; dotnet run --project WebApi.V1_Vulnerable/WebApi.V1_Vulnerable.csproj"
+Start-Process powershell -WorkingDirectory $PSScriptRoot -ArgumentList "-NoExit", "-Command", "Write-Host 'WebApi.V1_Vulnerable (Baseline) - Cổng 5001' -ForegroundColor Yellow; dotnet run --project WebApi.V1_Vulnerable/WebApi.V1_Vulnerable.csproj"
 
 Start-Sleep -Seconds 3
 
 Write-Host "[3/3] Đang khởi chạy WebApi.V2_Secure tại http://localhost:5002..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'WebApi.V2_Secure (Hardened) - Cổng 5002' -ForegroundColor Green; dotnet run --project WebApi.V2_Secure/WebApi.V2_Secure.csproj"
+Start-Process powershell -WorkingDirectory $PSScriptRoot -ArgumentList "-NoExit", "-Command", "Write-Host 'WebApi.V2_Secure (Hardened) - Cổng 5002' -ForegroundColor Green; dotnet run --project WebApi.V2_Secure/WebApi.V2_Secure.csproj"
 
 Start-Sleep -Seconds 3
 

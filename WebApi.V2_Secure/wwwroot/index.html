@@ -49,26 +49,35 @@
       <div class="banner-content">
         <div>
           <div class="banner-title" style="color: #34d399;">
-            🛡️ [PHIÊN BẢN V2 - ĐÃ BẢO MẬT 4 LỚP (HARDENED) | CỔNG 5002]
+            🛡️ [PHIÊN BẢN V2 - ĐÃ BẢO MẬT 4 LỚP CỐT LÕI + PHÒNG THỦ CHUYÊN SÂU | CỔNG 5002]
           </div>
           <div class="banner-desc">
-            Phiên bản đã triển khai hoàn chỉnh <strong>4 lớp kiểm soát bảo mật chuyên sâu</strong>, băm mật khẩu bằng BCrypt và ghi nhận Audit Log thời gian thực.
+            Bảo vệ toàn diện: <strong>4 kịch bản cốt lõi KB1–KB4 (Đề cương)</strong> kết hợp <strong>4 cơ chế mở rộng KB5–KB8 (JTI Revocation, Anti-Mass Assignment, Magic-Bytes, Rate Limiting & OWASP Headers)</strong>.
           </div>
         </div>
         <div class="badges-row">
           <span class="badge badge-green">✓ KB1: JWT Bearer (401)</span>
-          <span class="badge badge-green">✓ KB2: RBAC AdminOnly (403)</span>
+          <span class="badge badge-green">✓ KB2: RBAC Policy (403)</span>
           <span class="badge badge-green">✓ KB3: Chống BOLA/IDOR (403)</span>
-          <span class="badge badge-green">✓ KB4: Validation & Parameterized (400)</span>
+          <span class="badge badge-green">✓ KB4: Chống SQLi (400)</span>
+          <span class="badge badge-purple">✓ KB5: JTI Blacklist (401)</span>
+          <span class="badge badge-purple">✓ KB6: Business Logic (400/403)</span>
+          <span class="badge badge-purple">✓ KB7: Magic Bytes (415)</span>
+          <span class="badge badge-purple">✓ KB8: Rate Limit (429)</span>
         </div>
       </div>
     </div>
 
-    <!-- KHU VỰC C: 1-CLICK KB1–KB4 SIMULATOR -->
+    <!-- HÀNG 1: 1-CLICK KB1–KB4 SIMULATOR (4 KỊCH BẢN CỐT LÕI THEO ĐỀ CƯƠNG) -->
     <div class="card" style="margin-bottom: 24px;">
       <div class="card-header">
-        <div class="card-title">
-          🎯 Bảng Mô Phỏng & Kiểm Thử Nhanh 4 Kịch Bản Bảo Mật (1-Click KB1–KB4 Simulator)
+        <div>
+          <div class="card-title">
+            🎯 4 Kịch Bản Bảo Mật Cốt Lõi KB1–KB4 (Khớp 100% Đề Cương Nghiên Cứu)
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+            Mô phỏng 4 mục tiêu bảo mật căn bản: Xác thực JWT (401), Phân quyền RBAC (403), Kiểm soát BOLA/IDOR (403) và Lọc SQL Injection (400).
+          </div>
         </div>
         <button id="btnRunAllKB" class="btn btn-primary" onclick="runAllKB()">
           ▶ Chạy tất cả 4 kịch bản (Run All KB1–KB4)
@@ -156,12 +165,114 @@
       <div id="runAllSummary" style="display: none; margin-top: 14px;"></div>
     </div>
 
+    <!-- HÀNG 2: 1-CLICK KB5–KB8 EXTENDED DEFENSE-IN-DEPTH SIMULATOR -->
+    <div class="card" style="margin-bottom: 24px; border-color: rgba(168, 85, 247, 0.3);">
+      <div class="card-header">
+        <div>
+          <div class="card-title" style="color: #c084fc;">
+            ⚡ Kịch Bản Bảo Mật Mở Rộng KB5–KB8 (Defense-in-Depth: Token Replay, Business Logic, Magic-Bytes, Rate Limiting 429)
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+            Nâng cao năng lực phòng thủ: Quản lý vòng đời JWT (JTI Revocation), Chống lỗi Logic & Mass Assignment, Kiểm tra chữ ký byte tệp thực tế và Phòng chống Brute-force/Spam API.
+          </div>
+        </div>
+        <button id="btnRunAllExtKB" class="btn btn-secondary" style="border-color: #a855f7; color: #d8b4fe;" onclick="runAllExtKB()">
+          ▶ Chạy tất cả kịch bản mở rộng (KB5–KB8)
+        </button>
+      </div>
+
+      <div class="grid-4">
+        <!-- CARD KB5 -->
+        <div class="kb-card">
+          <div>
+            <div class="kb-header">
+              <span class="kb-tag">KB5 (REVOCATION)</span>
+              <span class="badge badge-purple">Mã chặn: 401</span>
+            </div>
+            <div class="kb-title">Thu Hồi Token Khi Đăng Xuất</div>
+            <div class="kb-desc">userA đăng xuất (POST /api/auth/logout), sau đó kẻ tấn công lấy lại JWT cũ gọi /api/auth/me. V2 kiểm tra JTI Blacklist chặn 401 Unauthorized.</div>
+            <div class="kb-endpoint">POST /logout -> GET /me</div>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" style="width: 100%; border-color: #a855f7;" onclick="runKB5()">
+              Thử Token Replay (KB5)
+            </button>
+            <div id="kb5Result" class="kb-result"></div>
+          </div>
+        </div>
+
+        <!-- CARD KB6 -->
+        <div class="kb-card">
+          <div>
+            <div class="kb-header">
+              <span class="kb-tag">KB6 (LOGIC & IDOR)</span>
+              <span class="badge badge-purple">Chặn: 400 / 403</span>
+            </div>
+            <div class="kb-title">Business Logic & IDOR Sửa/Xóa</div>
+            <div class="kb-desc">Tạo đơn tiền âm (-999k) hoặc userA cố xóa đơn #3 của userB. V2 chặn 400 Bad Request (tiền âm) & 403 Forbidden (IDOR khi xóa).</div>
+            <div class="kb-endpoint">POST /orders | DELETE /orders/3</div>
+          </div>
+          <div>
+            <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+              <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="runKB6Logic()">
+                Tiền âm (-999k)
+              </button>
+              <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="runKB6IdorDelete()">
+                Xóa đơn #3
+              </button>
+            </div>
+            <div id="kb6Result" class="kb-result"></div>
+          </div>
+        </div>
+
+        <!-- CARD KB7 -->
+        <div class="kb-card">
+          <div>
+            <div class="kb-header">
+              <span class="kb-tag">KB7 (MAGIC BYTES)</span>
+              <span class="badge badge-purple">Mã chặn: 415 / 400</span>
+            </div>
+            <div class="kb-title">Upload Webshell Giả Mạo Ảnh</div>
+            <div class="kb-desc">Gửi file 'webshell.jpg.aspx' hoặc file .jpg chứa script text. V2 kiểm tra Magic Bytes (FF D8 FF) chặn 415/400, chống RCE.</div>
+            <div class="kb-endpoint">POST /api/orders/1/upload</div>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" style="width: 100%; border-color: #a855f7;" onclick="runKB7()">
+              Thử Upload Webshell Giả
+            </button>
+            <div id="kb7Result" class="kb-result"></div>
+          </div>
+        </div>
+
+        <!-- CARD KB8 -->
+        <div class="kb-card">
+          <div>
+            <div class="kb-header">
+              <span class="kb-tag">KB8 (RATE LIMITING)</span>
+              <span class="badge badge-purple">Mã chặn: 429</span>
+            </div>
+            <div class="kb-title">Chống Spam API / Brute-force</div>
+            <div class="kb-desc">Spam liên tục 8 requests vào /api/orders/rate-test. V2 giới hạn 5 req/5s, trả về 429 Too Many Requests kèm Retry-After.</div>
+            <div class="kb-endpoint">GET /api/orders/rate-test (Spam)</div>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" style="width: 100%; border-color: #a855f7;" onclick="runKB8()">
+              Thử Spam API (Test 429)
+            </button>
+            <div id="kb8Result" class="kb-result"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="runAllExtSummary" style="display: none; margin-top: 14px;"></div>
+    </div>
+
     <!-- KHU VỰC A: TRUNG TÂM ĐĂNG NHẬP 1-CLICK & GIẢI MÃ JWT TOKEN -->
     <div class="grid-2">
       <!-- CỘT 1: FORM LOGIN & QUICK ACCOUNTS -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">🔐 Trung Tâm Xác Thực (1-Click Quick Login)</div>
+          <div class="card-title">🔐 Trung Tâm Xác Thực (1-Click Quick Login & Logout)</div>
           <span class="badge badge-blue">POST /api/auth/login</span>
         </div>
 
@@ -192,11 +303,14 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
           <input type="text" id="loginUsername" class="form-input" placeholder="Tên đăng nhập (username)">
           <input type="password" id="loginPassword" class="form-input" placeholder="Mật khẩu (password)">
           <button id="btnLogin" class="btn btn-primary" style="white-space: nowrap;" onclick="performLogin(document.getElementById('loginUsername').value, document.getElementById('loginPassword').value)">
             Đăng nhập
+          </button>
+          <button id="btnLogout" class="btn btn-secondary" style="white-space: nowrap;" onclick="performLogout()">
+            Đăng xuất
           </button>
         </div>
 
@@ -235,14 +349,20 @@
       </div>
     </div>
 
-    <!-- KHU VỰC B: NGHIỆP VỤ QUẢN LÝ ĐƠN HÀNG & NGƯỜI DÙNG -->
+    <!-- KHU VỰC B: NGHIỆP VỤ QUẢN LÝ ĐƠN HÀNG, TẠO ĐƠN & BẢO MẬT -->
     <div class="card" style="margin-bottom: 24px;">
       <div class="tabs-nav">
         <button class="tab-btn active" data-tab="orders" onclick="switchTab('orders')">
           📦 Quản Lý Đơn Hàng (/api/orders)
         </button>
+        <button class="tab-btn" data-tab="create-order" onclick="switchTab('create-order')">
+          ➕ Tạo Đơn Hàng Mới (Test Mass Assignment)
+        </button>
         <button class="tab-btn" data-tab="users" onclick="switchTab('users')">
           👥 Quản Trị Người Dùng (/api/admin/users)
+        </button>
+        <button class="tab-btn" data-tab="security-headers" onclick="switchTab('security-headers')">
+          🛡️ HTTP Security Headers (OWASP ZAP)
         </button>
       </div>
 
@@ -315,7 +435,48 @@
         </div>
       </div>
 
-      <!-- TAB 2: ADMIN USERS -->
+      <!-- TAB 2: TẠO ĐƠN HÀNG MỚI (TEST BUSINESS LOGIC & MASS ASSIGNMENT) -->
+      <div id="tab-create-order" class="tab-content">
+        <div style="max-width: 600px; margin: 0 auto; padding: 10px 0;">
+          <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; color: #38bdf8;">
+            🛒 Tạo Đơn Hàng Mới & Kiểm Thử Logic Nghiệp Vụ
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
+            Thử nghiệm KB6: Trên V2, `UserId` được tự động lấy từ JWT Claims (Chống Mass Assignment). Số tiền bắt buộc phải `> 0 VNĐ`.
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <label class="form-label">Tên Sản Phẩm:</label>
+            <input type="text" id="newProductName" class="form-input" placeholder="Ví dụ: Tai nghe chống ồn Sony WH-1000XM5" value="Tai nghe Sony WH-1000XM5">
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <label class="form-label">Tổng Số Tiền (VNĐ):</label>
+            <input type="number" id="newTotalAmount" class="form-input" placeholder="Nhập số tiền..." value="6990000">
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+            <span style="font-size: 0.75rem; color: var(--text-dim); align-self: center;">Mẫu nhanh:</span>
+            <button class="btn btn-tag" type="button" onclick="document.getElementById('newTotalAmount').value = 500000; document.getElementById('newProductName').value = 'Bàn phím cơ DareU';">
+              Đơn Hợp Lệ (500,000đ)
+            </button>
+            <button class="btn btn-tag" style="border-color: #ef4444; color: #f87171;" type="button" onclick="document.getElementById('newTotalAmount').value = -999999; document.getElementById('newProductName').value = 'Lỗ hổng Tiền Âm';">
+              ⚠️ Số Tiền Âm (-999,999đ)
+            </button>
+            <button class="btn btn-tag" style="border-color: #ef4444; color: #f87171;" type="button" onclick="document.getElementById('newTotalAmount').value = 0; document.getElementById('newProductName').value = 'Lỗ hổng 0đ';">
+              ⚠️ Số Tiền 0đ
+            </button>
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%;" onclick="submitCreateOrder()">
+            ➕ Gửi Yêu Cầu Tạo Đơn Hàng (POST /api/orders)
+          </button>
+
+          <div id="createOrderResult" style="margin-top: 14px;"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: ADMIN USERS -->
       <div id="tab-users" class="tab-content">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <div>
@@ -343,6 +504,73 @@
             </tbody>
           </table>
         </div>
+      </div>
+
+      <!-- TAB 4: HTTP SECURITY HEADERS (OWASP) -->
+      <div id="tab-security-headers" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div>
+            <div style="font-weight: 700; color: #34d399;">Bảng Kiểm Tra HTTP Security Headers Chuẩn OWASP</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              Bản V2 tự động gắn đầy đủ các Header an ninh để phòng thủ chống Clickjacking, MIME-Sniffing và XSS, đạt điểm tối đa trên OWASP ZAP.
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="checkSecurityHeadersLive()">
+            🔍 Kiểm Tra Headers Thực Tế (Live Check)
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tên HTTP Header</th>
+                <th>Ý Nghĩa Bảo Mật (Mục Đích)</th>
+                <th>Giá Trị Trên V1 (Baseline)</th>
+                <th>Giá Trị Trên V2 (Hardened)</th>
+                <th>Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody id="headersTableBody">
+              <tr>
+                <td><code>X-Content-Type-Options</code></td>
+                <td>Chống MIME-sniffing, buộc trình duyệt tuân thủ MIME type</td>
+                <td><span class="badge badge-orange">Không có (Thiếu)</span></td>
+                <td><span class="badge badge-green">nosniff</span></td>
+                <td><span style="color: #34d399; font-weight: 700;">✓ Chuẩn OWASP</span></td>
+              </tr>
+              <tr>
+                <td><code>X-Frame-Options</code></td>
+                <td>Chống tấn công Clickjacking / Chèn iframe trái phép</td>
+                <td><span class="badge badge-orange">Không có (Thiếu)</span></td>
+                <td><span class="badge badge-green">DENY</span></td>
+                <td><span style="color: #34d399; font-weight: 700;">✓ Chuẩn OWASP</span></td>
+              </tr>
+              <tr>
+                <td><code>X-XSS-Protection</code></td>
+                <td>Kích hoạt bộ lọc XSS Filter của trình duyệt</td>
+                <td><span class="badge badge-orange">Không có (Thiếu)</span></td>
+                <td><span class="badge badge-green">1; mode=block</span></td>
+                <td><span style="color: #34d399; font-weight: 700;">✓ Chuẩn OWASP</span></td>
+              </tr>
+              <tr>
+                <td><code>Referrer-Policy</code></td>
+                <td>Bảo vệ quyền riêng tư đường dẫn nguồn gốc URL</td>
+                <td><span class="badge badge-orange">Không có (Thiếu)</span></td>
+                <td><span class="badge badge-green">strict-origin-when-cross-origin</span></td>
+                <td><span style="color: #34d399; font-weight: 700;">✓ Chuẩn OWASP</span></td>
+              </tr>
+              <tr>
+                <td><code>Content-Security-Policy</code></td>
+                <td>Giới hạn nguồn nạp tài nguyên an toàn (CSP)</td>
+                <td><span class="badge badge-orange">Không có (Thiếu)</span></td>
+                <td><span class="badge badge-green">default-src 'self' 'unsafe-inline' data:;</span></td>
+                <td><span style="color: #34d399; font-weight: 700;">✓ Chuẩn OWASP</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="liveHeadersResult" style="margin-top: 10px;"></div>
       </div>
     </div>
 

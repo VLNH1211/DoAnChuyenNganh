@@ -19,6 +19,8 @@ builder.Services.AddDbContext<V2DbContext>(options =>
 
 // 2. Đăng ký Services
 builder.Services.AddSingleton<IAuditLogService, AuditLogService>();
+builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
+builder.Services.AddSingleton<IRateLimitingService, RateLimitingService>();
 
 // 3. Cấu hình JWT Bearer Authentication & Token Validation
 var secretKey = builder.Configuration["JwtSettings:SecretKey"] 
@@ -221,9 +223,8 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.UseAuthentication();
-app.UseAuthorization();
-
 app.UseMiddleware<SecurityAuditMiddleware>();
+app.UseAuthorization();
 
 app.MapControllers();
 
@@ -233,4 +234,4 @@ Console.WriteLine(" Swagger UI (kèm Authorize JWT): http://localhost:5002/swagg
 Console.WriteLine(" Sinh viên: Võ Lê Nhật Hoàng - MSSV: 2387700017 - HUTECH ATTT");
 Console.WriteLine("==========================================================================");
 
-app.Run();
+app.Run("http://localhost:5002");

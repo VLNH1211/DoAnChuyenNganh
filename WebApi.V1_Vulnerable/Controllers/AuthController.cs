@@ -37,7 +37,7 @@ namespace WebApi.V1_Vulnerable.Controllers
                 });
             }
 
-            // V1: So sánh plaintext password trực tiếp trong CSDL
+            // V1: So sánh plaintext password trực tiếp trong CSDL (Không băm, không chống Brute-Force)
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == request.Username && u.Password == request.Password);
 
@@ -59,6 +59,7 @@ namespace WebApi.V1_Vulnerable.Controllers
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            var jti = Guid.NewGuid().ToString();
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -68,7 +69,7 @@ namespace WebApi.V1_Vulnerable.Controllers
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
                 new Claim(ClaimTypes.Role, user.Role),
                 new Claim("role", user.Role),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, jti)
             };
 
             var tokenDescriptor = new JwtSecurityToken(
@@ -88,6 +89,64 @@ namespace WebApi.V1_Vulnerable.Controllers
                 Username = user.Username,
                 Role = user.Role,
                 FullName = user.FullName
+            });
+        }
+
+        /// <summary>
+        /// API Đăng xuất (V1: Lỗ hổng Token Revocation / Không thu hồi Token)
+        /// Server trả về 200 OK nhưng không lưu Blacklist hay vô hiệu hóa token.
+        /// Kẻ tấn công có thể lấy lại JWT cũ để gọi API bình thường (Session / Token Replay).
+        /// </summary>
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = "[V1 - Lỗ hổng Thu hồi Token] Đăng xuất thành công (Nhưng server KHÔNG thu hồi JWT Token - Token cũ vẫn tiếp tục sử dụng được)."
+            });
+        }
+
+        /// <summary>
+        /// API Xem thông tin tài khoản hiện tại (V1: Không kiểm tra token blacklist)
+        /// </summary>
+        [HttpGet("me")]
+        public IActionResult GetCurrentUser()
+        {
+            var authHeader = Request.Headers["Authorization"].ToString();
+            string username = "Anonymous";
+            string role = "None";
+            string jti = "";
+
+            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                var tokenStr = authHeader.Substring("Bearer ".Length).Trim();
+                try
+                {
+                    var handler = new JwtSecurityTokenHandler();
+                    var token = handler.ReadJwtToken(tokenStr);
+                    username = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name || c.Type == "unique_name")?.Value ?? "User";
+                    role = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role || c.Type == "role")?.Value ?? "NguoiDung";
+                    jti = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti || c.Type == "jti")?.Value ?? "";
+                }
+                catch
+                {
+                    // Ignore parse errors on V1
+                }
+            }
+
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = "[V1] Token được chấp nhận (Dù đã logout vẫn hợp lệ do thiếu cơ chế JTI Blacklist).",
+                data = new
+                {
+                    username,
+                    role,
+                    jti
+                }
             });
         }
     }

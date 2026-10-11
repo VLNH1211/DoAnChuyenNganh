@@ -85,4 +85,4 @@ Console.WriteLine(" Swagger UI: http://localhost:5001/swagger");
 Console.WriteLine(" Sinh viên: Võ Lê Nhật Hoàng - MSSV: 2387700017 - HUTECH ATTT");
 Console.WriteLine("==========================================================================");
 
-app.Run();
+app.Run("http://localhost:5001");

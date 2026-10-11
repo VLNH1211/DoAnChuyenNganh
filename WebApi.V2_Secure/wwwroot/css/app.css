@@ -598,6 +598,8 @@ body[data-version="V2"] .version-banner {
 .status-400 { background: #78350f; color: #fde047; }
 .status-401 { background: #831843; color: #f472b6; }
 .status-403 { background: #7f1d1d; color: #f87171; }
+.status-415 { background: #831843; color: #f472b6; }
+.status-429 { background: #7c2d12; color: #fb923c; }
 .status-500 { background: #581c87; color: #c084fc; }
 
 /* TABS */

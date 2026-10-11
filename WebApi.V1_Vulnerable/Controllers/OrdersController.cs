@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApi.V1_Vulnerable.Data;
+using WebApi.V1_Vulnerable.DTOs;
 using WebApi.V1_Vulnerable.Models;
 
 namespace WebApi.V1_Vulnerable.Controllers
@@ -50,7 +51,6 @@ namespace WebApi.V1_Vulnerable.Controllers
         {
             _logger.LogInformation("[V1 - KB3] GetOrderById: Truy vấn đơn hàng ID={Id} không kiểm tra chủ sở hữu", id);
 
-            // V1: Truy vấn thẳng theo Id, không biết hoặc bỏ qua định danh người gọi
             var order = await _context.Orders.FindAsync(id);
 
             if (order == null)
@@ -113,6 +113,132 @@ namespace WebApi.V1_Vulnerable.Controllers
                     stackTrace = ex.StackTrace
                 });
             }
+        }
+
+        /// <summary>
+        /// V1: Tạo đơn hàng mới - Lỗ hổng Mass Assignment & Business Logic Flaw
+        /// Cho phép truyền số tiền âm, tự chỉ định UserId của người khác hoặc tự đặt trạng thái 'Completed'.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequestV1 request)
+        {
+            var assignedUserId = request.UserId ?? 1;
+            var customerName = request.CustomerName ?? "Khách Hàng V1";
+
+            // V1: Không validate số tiền (cho phép số âm), không validate quyền sở hữu (Mass Assignment)
+            var newOrder = new Order
+            {
+                OrderCode = $"ORD-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}",
+                UserId = assignedUserId,
+                CustomerName = customerName,
+                ProductName = request.ProductName ?? "Sản phẩm thử nghiệm",
+                TotalAmount = request.TotalAmount, // Cho phép số tiền âm hoặc 0!
+                Status = !string.IsNullOrWhiteSpace(request.Status) ? request.Status : "Pending", // Cho phép tự thăng hạng Completed!
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Orders.Add(newOrder);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = "[V1 - Lỗ hổng Mass Assignment & Business Logic] Tạo đơn hàng thành công (Hệ thống chấp nhận số tiền âm, tự đặt UserId và Status mà không kiểm tra).",
+                data = newOrder
+            });
+        }
+
+        /// <summary>
+        /// V1: Cập nhật đơn hàng - Lỗ hổng IDOR khi sửa
+        /// Không kiểm tra quyền sở hữu, cho phép sửa bất kỳ đơn hàng nào của người khác.
+        /// </summary>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateOrder(int id, [FromBody] UpdateOrderRequestV1 request)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null)
+            {
+                return NotFound(new { success = false, message = $"Không tìm thấy đơn hàng ID={id}" });
+            }
+
+            // V1: Không kiểm tra UserId chủ đơn hàng -> userA sửa được đơn của userB
+            if (!string.IsNullOrWhiteSpace(request.ProductName)) order.ProductName = request.ProductName;
+            order.TotalAmount = request.TotalAmount; // Cho phép sửa thành số âm
+            if (!string.IsNullOrWhiteSpace(request.Status)) order.Status = request.Status;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = $"[V1 - Lỗ hổng IDOR khi Sửa] Cập nhật đơn hàng #{id} thành công (Không kiểm tra quyền sở hữu người gọi).",
+                data = order
+            });
+        }
+
+        /// <summary>
+        /// V1: Xóa đơn hàng - Lỗ hổng IDOR khi xóa
+        /// Không kiểm tra quyền sở hữu, userA xóa được đơn hàng của userB.
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null)
+            {
+                return NotFound(new { success = false, message = $"Không tìm thấy đơn hàng ID={id}" });
+            }
+
+            // V1: Xóa thẳng mà không kiểm tra quyền sở hữu
+            _context.Orders.Remove(order);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = $"[V1 - Lỗ hổng IDOR khi Xóa] Đã xóa thành công đơn hàng #{id} (Bất kỳ ai cũng có thể xóa đơn của người khác)."
+            });
+        }
+
+        /// <summary>
+        /// V1: Upload tệp đính kèm / chứng từ - Lỗ hổng File Upload & Path Traversal
+        /// Không kiểm tra Magic Bytes, chấp nhận mọi loại tệp độc hại và không lọc đường dẫn.
+        /// </summary>
+        [HttpPost("{id}/upload")]
+        public IActionResult UploadAttachment(int id, [FromForm] IFormFile? file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { success = false, message = "Vui lòng chọn file tải lên." });
+            }
+
+            // V1: Nhận mọi file, kể cả webshell.aspx, shell.php, ../../evil.sh
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = $"[V1 - Lỗ hổng File Upload] Tải lên tệp '{file.FileName}' cho đơn hàng #{id} thành công (Không kiểm tra Magic Bytes / Extension / Path Traversal).",
+                fileName = file.FileName,
+                fileSize = file.Length,
+                contentType = file.ContentType
+            });
+        }
+
+        /// <summary>
+        /// V1: Endpoint kiểm thử Rate Limiting - Không giới hạn tần suất
+        /// </summary>
+        [HttpGet("rate-test")]
+        public IActionResult RateLimitTest()
+        {
+            return Ok(new
+            {
+                success = true,
+                statusCode = 200,
+                message = "[V1 - Không Giới Hạn Tần Suất] Yêu cầu được chấp nhận ngay lập tức (Không áp dụng Rate Limiting / Chống Brute-Force)."
+            });
         }
     }
 }
