@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="WebApi.V1_Vulnerable/WebApi.V1_Vulnerable.csproj" />
+  <Project Path="WebApi.V2_Secure/WebApi.V2_Secure.csproj" />
+</Solution>

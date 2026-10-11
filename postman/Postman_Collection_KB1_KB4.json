@@ -1,0 +1,550 @@
+{
+  "info": {
+    "_postman_id": "c1f7b0a8-2026-4bdf-890a-36944c1389ac",
+    "name": "HUTECH_ATTT_SecurityLab_KB1_KB4_Collection",
+    "description": "Bộ kịch bản kiểm thử tự động hệ thống thực nghiệm Đồ án chuyên ngành ATTT HUTECH.\nSinh viên: Võ Lê Nhật Hoàng (MSSV: 2387700017 - Lớp: 23DATA1)\nĐề tài: XÂY DỰNG VÀ KIỂM THỬ CÁC CƠ CHẾ BẢO MẬT CHO ỨNG DỤNG WEB/API DỰA TRÊN XÁC THỰC, PHÂN QUYỀN VÀ KIỂM SOÁT TRUY CẬP\n\nBao gồm 4 kịch bản kiểm thử Before/After:\n- KB1: Truy cập API khi chưa đăng nhập (MT1 -> Mã chặn: 401)\n- KB2: Người dùng thường gọi API quản trị (MT2 -> Mã chặn: 403)\n- KB3: Truy cập dữ liệu tài khoản khác - BOLA/IDOR (MT3 -> Mã chặn: 403)\n- KB4: Đầu vào không hợp lệ / SQL Injection có kiểm soát (MT4 -> Mã chặn: 400)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl_V1", "value": "http://localhost:5001", "type": "string" },
+    { "key": "baseUrl_V2", "value": "http://localhost:5002", "type": "string" },
+    { "key": "token_admin", "value": "", "type": "string" },
+    { "key": "token_staff1", "value": "", "type": "string" },
+    { "key": "token_userA", "value": "", "type": "string" },
+    { "key": "token_userB", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "00. Lấy JWT Token (Đăng nhập)",
+      "item": [
+        {
+          "name": "Login V2 - admin (Role: Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login Admin thành công - Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.token).to.not.be.empty;",
+                  "    pm.collectionVariables.set(\"token_admin\", jsonData.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl_V2}}/api/auth/login", "host": ["{{baseUrl_V2}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login V2 - staff1 (Role: NhanVien)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login Staff1 thành công - Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.token).to.not.be.empty;",
+                  "    pm.collectionVariables.set(\"token_staff1\", jsonData.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"staff1\",\n  \"password\": \"Staff@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl_V2}}/api/auth/login", "host": ["{{baseUrl_V2}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login V2 - userA (Role: NguoiDung)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login UserA thành công - Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.token).to.not.be.empty;",
+                  "    pm.collectionVariables.set(\"token_userA\", jsonData.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"userA\",\n  \"password\": \"UserA@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl_V2}}/api/auth/login", "host": ["{{baseUrl_V2}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login V2 - userB (Role: NguoiDung)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login UserB thành công - Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.token).to.not.be.empty;",
+                  "    pm.collectionVariables.set(\"token_userB\", jsonData.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"userB\",\n  \"password\": \"UserB@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl_V2}}/api/auth/login", "host": ["{{baseUrl_V2}}"], "path": ["api", "auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "01. KB1 - Truy cập API khi chưa đăng nhập (MT1)",
+      "item": [
+        {
+          "name": "[KB1-V1-Before] GET /api/orders (Không có Token - LỖ HỔNG)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V1 Baseline] Không cần Token vẫn nhận 200 OK (Lỗ hổng xác thực)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.data.length).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl_V1}}/api/orders", "host": ["{{baseUrl_V1}}"], "path": ["api", "orders"] }
+          }
+        },
+        {
+          "name": "[KB1-V2-After-1] GET /api/orders (Không có Token -> CHẶN 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] Bị chặn thành công với 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "    pm.expect(jsonData.statusCode).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl_V2}}/api/orders", "host": ["{{baseUrl_V2}}"], "path": ["api", "orders"] }
+          }
+        },
+        {
+          "name": "[KB1-V2-After-2] GET /api/orders (Có Token userA -> HỢP LỆ 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] Có Token hợp lệ -> 200 OK & chỉ thấy đơn của chính mình\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    // Kiểm tra tất cả đơn trả về đều thuộc về userA",
+                  "    jsonData.data.forEach(function(order) {",
+                  "        pm.expect(order.customerName).to.include(\"Võ Lê Nhật Hoàng\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_userA}}" }],
+            "url": { "raw": "{{baseUrl_V2}}/api/orders", "host": ["{{baseUrl_V2}}"], "path": ["api", "orders"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. KB2 - Người dùng thường gọi API quản trị (MT2)",
+      "item": [
+        {
+          "name": "[KB2-V1-Before] GET /api/admin/users (Không kiểm tra quyền - LỖ HỔNG)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V1 Baseline] Bất kỳ ai gọi đều nhận 200 OK và lộ toàn bộ user (Lỗ hổng RBAC)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.data.length).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl_V1}}/api/admin/users", "host": ["{{baseUrl_V1}}"], "path": ["api", "admin", "users"] }
+          }
+        },
+        {
+          "name": "[KB2-V2-After-1] GET /api/admin/users (Token userA: NguoiDung -> CHẶN 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] NguoiDung gọi API Quản trị bị chặn 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "    pm.expect(jsonData.statusCode).to.eql(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_userA}}" }],
+            "url": { "raw": "{{baseUrl_V2}}/api/admin/users", "host": ["{{baseUrl_V2}}"], "path": ["api", "admin", "users"] }
+          }
+        },
+        {
+          "name": "[KB2-V2-After-2] GET /api/admin/users (Token staff1: NhanVien -> CHẶN 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] Nhân viên gọi API Quản trị bị chặn 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "    pm.expect(jsonData.statusCode).to.eql(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_staff1}}" }],
+            "url": { "raw": "{{baseUrl_V2}}/api/admin/users", "host": ["{{baseUrl_V2}}"], "path": ["api", "admin", "users"] }
+          }
+        },
+        {
+          "name": "[KB2-V2-After-3] GET /api/admin/users (Token admin: Admin -> HỢP LỆ 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] Admin gọi API Quản trị thành công 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.data.length).to.be.above(0);",
+                  "    // Đảm bảo không lộ hash mật khẩu trong DTO",
+                  "    pm.expect(jsonData.data[0].passwordHash).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": { "raw": "{{baseUrl_V2}}/api/admin/users", "host": ["{{baseUrl_V2}}"], "path": ["api", "admin", "users"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. KB3 - Truy cập dữ liệu tài khoản khác - BOLA/IDOR (MT3)",
+      "item": [
+        {
+          "name": "[KB3-V1-Before] GET /api/orders/3 (userA xem đơn #3 của userB - LỖ HỔNG IDOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V1 Baseline] Xem được đơn hàng của người khác - 200 OK (Lỗ hổng BOLA/IDOR)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.data.id).to.eql(3);",
+                  "    pm.expect(jsonData.data.customerName).to.eql(\"Trần Thị Bích\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl_V1}}/api/orders/3", "host": ["{{baseUrl_V1}}"], "path": ["api", "orders", "3"] }
+          }
+        },
+        {
+          "name": "[KB3-V2-After-1] GET /api/orders/3 (userA xem đơn #3 của userB -> CHẶN 403 IDOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] Chặn IDOR thành công với 403 Forbidden, không lộ dữ liệu\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "    pm.expect(jsonData.statusCode).to.eql(403);",
+                  "    pm.expect(jsonData.message).to.include(\"BOLA/IDOR\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_userA}}" }],
+            "url": { "raw": "{{baseUrl_V2}}/api/orders/3", "host": ["{{baseUrl_V2}}"], "path": ["api", "orders", "3"] }
+          }
+        },
+        {
+          "name": "[KB3-V2-After-2] GET /api/orders/1 (userA xem đơn #1 của chính mình -> HỢP LỆ 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] Xem đơn chính chủ thành công 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.data.id).to.eql(1);",
+                  "    pm.expect(jsonData.data.customerName).to.eql(\"Võ Lê Nhật Hoàng\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_userA}}" }],
+            "url": { "raw": "{{baseUrl_V2}}/api/orders/1", "host": ["{{baseUrl_V2}}"], "path": ["api", "orders", "1"] }
+          }
+        },
+        {
+          "name": "[KB3-V2-After-3] GET /api/orders/3 (Admin xem đơn #3 -> HỢP LỆ 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] Admin có quyền tra cứu đơn bất kỳ -> 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.data.id).to.eql(3);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": { "raw": "{{baseUrl_V2}}/api/orders/3", "host": ["{{baseUrl_V2}}"], "path": ["api", "orders", "3"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. KB4 - Đầu vào không hợp lệ / SQL Injection (MT4)",
+      "item": [
+        {
+          "name": "[KB4-V1-Before] GET /api/orders/search?keyword=' OR 1=1 -- (LỖ HỔNG SQLi)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V1 Baseline] Bị khai thác SQL Injection thành công, dump toàn bộ đơn (Status 200)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    // dump toàn bộ đơn hàng trong CSDL",
+                  "    pm.expect(jsonData.data.length).to.be.at.least(5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl_V1}}/api/orders/search?keyword=' OR 1=1 --",
+              "host": ["{{baseUrl_V1}}"],
+              "path": ["api", "orders", "search"],
+              "query": [{ "key": "keyword", "value": "' OR 1=1 --" }]
+            }
+          }
+        },
+        {
+          "name": "[KB4-V2-After-1] GET /api/orders/search?keyword=' OR 1=1 -- (Token userA -> CHẶN 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] Chặn tấn công SQLi thành công với 400 Bad Request, không lỗi 500\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "    pm.expect(jsonData.statusCode).to.eql(400);",
+                  "    pm.expect(jsonData.error).to.eql(\"InvalidInputOrSqlInjectionDetected\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_userA}}" }],
+            "url": {
+              "raw": "{{baseUrl_V2}}/api/orders/search?keyword=' OR 1=1 --",
+              "host": ["{{baseUrl_V2}}"],
+              "path": ["api", "orders", "search"],
+              "query": [{ "key": "keyword", "value": "' OR 1=1 --" }]
+            }
+          }
+        },
+        {
+          "name": "[KB4-V2-After-2] GET /api/orders/search?keyword=Dell (Token userA -> HỢP LỆ 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] Tìm kiếm an toàn với Parameterized LINQ thành công 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.count).to.be.at.least(1);",
+                  "    pm.expect(jsonData.data[0].productName).to.include(\"Dell\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_userA}}" }],
+            "url": {
+              "raw": "{{baseUrl_V2}}/api/orders/search?keyword=Dell",
+              "host": ["{{baseUrl_V2}}"],
+              "path": ["api", "orders", "search"],
+              "query": [{ "key": "keyword", "value": "Dell" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Giám Sát Nhật Ký Kiểm Toán (Audit Logs)",
+      "item": [
+        {
+          "name": "[Audit-V2] GET /api/admin/audit-logs (Token admin -> 200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[V2 Secure] Admin tra cứu Audit Logs thành công 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.total).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": { "raw": "{{baseUrl_V2}}/api/admin/audit-logs", "host": ["{{baseUrl_V2}}"], "path": ["api", "admin", "audit-logs"] }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+@WebApi.V1_Vulnerable_HostAddress = http://localhost:5183
+
+GET {{WebApi.V1_Vulnerable_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
