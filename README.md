@@ -1,4 +1,4 @@
-# HỆ THỐNG THỰC NGHIỆM ĐỒ ÁN CHUYÊN NGÀNH AN TOÀN THÔNG TIN
+# 🛡️ HỆ THỐNG THỰC NGHIỆM ĐỒ ÁN CHUYÊN NGÀNH AN TOÀN THÔNG TIN
 
 ## ĐỀ TÀI: XÂY DỰNG VÀ KIỂM THỬ CÁC CƠ CHẾ BẢO MẬT CHO ỨNG DỤNG WEB/API DỰA TRÊN XÁC THỰC, PHÂN QUYỀN VÀ KIỂM SOÁT TRUY CẬP
 
@@ -10,127 +10,154 @@
 
 ---
 
-## 1. CẤU TRÚC SOLUTION & THƯ MỤC
+## 📌 1. GIỚI THIỆU HAI PHIÊN BẢN WEB ĐỐI CHỨNG (BEFORE / AFTER)
 
-Hệ thống được tổ chức hoàn chỉnh theo cấu trúc chuẩn dự án doanh nghiệp và nghiên cứu khoa học (mô hình đối chứng **Before/After: Red Team vs Blue Team**):
+Hệ thống được xây dựng theo mô hình thực nghiệm đối chứng (**Red Team vs Blue Team**) gồm 2 ứng dụng Web/API chạy song song:
+
+| Phiên bản | Địa chỉ chạy | Vai trò trong Đồ án | Giao diện & Đặc điểm kỹ thuật |
+| :--- | :--- | :--- | :--- |
+| 🔴 **Web V1 (`WebApi.V1_Vulnerable`)** | `http://localhost:5001`<br>[Xem README riêng của V1](./WebApi.V1_Vulnerable/README.md) | **Before (Red Team - Có lỗ hổng)**<br>Dùng để đóng vai **Kẻ tấn công (Attacker)** khai thác trực tiếp 8 lỗ hổng phổ biến nhất trên Web API. | Giao diện tông **Đỏ Cảnh Báo**, lưu mật khẩu Plaintext, thiếu kiểm tra JWT, thiếu RBAC, dính lỗi IDOR Xem/Sửa/Xóa, dính SQL Injection nối chuỗi thô, dính Token Replay sau Logout, chấp nhận đơn tiền âm & Webshell giả mạo ảnh, không có Rate Limit. |
+| 🟢 **Web V2 (`WebApi.V2_Secure`)** | `http://localhost:5002`<br>[Xem README riêng của V2](./WebApi.V2_Secure/README.md) | **After (Blue Team - Đã bảo mật)**<br>Dùng để đóng vai **Kỹ sư Bảo mật (Defender)** chứng minh hiệu quả của 8 lớp phòng thủ. | Giao diện tông **Xanh Ngọc An Toàn**, băm mật khẩu **BCrypt**, bắt buộc **JWT Bearer (`401`)**, phân quyền **RBAC `AdminOnly` (`403`)**, chống **BOLA/IDOR (`403`)**, lọc **Regex + Parameterized LINQ (`400`)**, thu hồi **JTI Blacklist (`401`)**, kiểm tra **Magic Bytes (`415`)**, chống Spam **Rate Limit (`429`)**, gắn **5 OWASP Security Headers** & ghi **Audit Logs**. |
+
+---
+
+## 🖥️ 2. HÌNH ẢNH TỔNG QUAN GIAO DIỆN WEB V1 & WEB V2
+
+### 🔴 2.1 Giao diện Tổng quan Web V1 (`http://localhost:5001` - Phiên bản Chưa bảo mật / Red Team)
+![Giao diện tổng quan Web V1](./screenshots/01_V1_Dashboard_Overview.png)
+> **Web V1 (Cổng 5001):** Hiển thị rõ cảnh báo màu đỏ `[PHIÊN BẢN V1 - CHƯA BẢO MẬT]`, tích hợp bộ **1-Click Attack Simulator** cho phép bấm 1 nút để khai thác tức thì 4 kịch bản cốt lõi (`KB1–KB4`) và 4 kịch bản mở rộng (`KB5–KB8`).
+
+---
+
+### 🟢 2.2 Giao diện Tổng quan Web V2 (`http://localhost:5002` - Phiên bản Đã bảo mật / Blue Team)
+![Giao diện tổng quan Web V2](./screenshots/02_V2_Dashboard_Overview.png)
+> **Web V2 (Cổng 5002):** Hiển thị trạng thái màu xanh ngọc `[PHIÊN BẢN V2 - ĐÃ BẢO MẬT 4 LỚP CỐT LÕI + PHÒNG THỦ CHUYÊN SÂU]`, tích hợp trung tâm đăng nhập nhanh 1-Click, bộ giải mã JWT Claims (`sub`, `role`, `jti`), kiểm tra trực tiếp **OWASP HTTP Security Headers** và bảng **Nhật ký Kiểm toán An ninh (Audit Logs)**.
+
+---
+
+## ⚔️ 3. HÌNH ẢNH ĐỐI CHỨNG TRỰC QUAN WEB V1 (BEFORE) VS WEB V2 (AFTER)
+
+### 🔹 Kịch bản 1 (KB1): Kiểm soát Xác thực (Authentication Control - `GET /api/orders`)
+- **Mục tiêu:** Chặn truy cập nặc danh (không có JWT Token) vào danh sách đơn hàng nội bộ.
+
+#### 🔴 [BEFORE - Web V1] Chưa đăng nhập vẫn lấy được toàn bộ đơn hàng (`200 OK - LỖ HỔNG`)
+![KB1 Before V1](./screenshots/03_KB1_Before_V1_Unauthenticated_200.png)
+
+#### 🟢 [AFTER - Web V2] Chặn đứng yêu cầu không có Token với mã `401 Unauthorized`
+![KB1 After V2 401](./screenshots/04_KB1_After_V2_Unauthorized_401.png)
+
+#### 🟢 [AFTER SUCCESS - Web V2] Đăng nhập hợp lệ `userA` -> Cấp JWT kèm `JTI` & chỉ trả về đơn của `userA` (`200 OK`)
+![KB1 After V2 200](./screenshots/05_KB1_After_V2_ValidToken_UserA_200.png)
+
+---
+
+### 🔹 Kịch bản 2 (KB2): Phân quyền Vai trò Quản trị (RBAC - `GET /api/admin/users`)
+- **Mục tiêu:** Ngăn chặn tài khoản khách hàng thường (`userA` - Role `NguoiDung`) gọi API Quản trị viên.
+
+#### 🔴 [BEFORE - Web V1] `userA` gọi được API Admin, lộ toàn bộ mật khẩu Plaintext (`200 OK - LỖ HỔNG`)
+![KB2 Before V1](./screenshots/06_KB2_Before_V1_BrokenRBAC_200.png)
+
+#### 🟢 [AFTER - Web V2] Policy `AdminOnly` chặn đứng `userA` với mã `403 Forbidden`
+![KB2 After V2 403](./screenshots/07_KB2_After_V2_RBAC_Blocked_403.png)
+
+#### 🟢 [AFTER SUCCESS - Web V2] Chỉ `admin` mới xem được danh sách user & mật khẩu đã băm BCrypt an toàn (`200 OK`)
+![KB2 After V2 Admin 200](./screenshots/08_KB2_After_V2_Admin_Access_200.png)
+
+---
+
+### 🔹 Kịch bản 3 (KB3): Kiểm soát Truy cập Đối tượng BOLA / IDOR (`GET /api/orders/3`)
+- **Mục tiêu:** Ngăn chặn `userA` thay đổi tham số `id=3` để xem trộm đơn hàng của `userB` (Trần Thị Bích).
+
+#### 🔴 [BEFORE - Web V1] `userA` xem trộm thành công đơn hàng `#3` trị giá 12.500.000đ của `userB` (`200 OK - LỖ HỔNG`)
+![KB3 Before V1](./screenshots/09_KB3_Before_V1_IDOR_Leaked_200.png)
+
+#### 🟢 [AFTER - Web V2] Kiểm tra chủ sở hữu (`order.UserId == Claims.UserId`) chặn đứng với mã `403 Forbidden`
+![KB3 After V2](./screenshots/10_KB3_After_V2_IDOR_Blocked_403.png)
+
+---
+
+### 🔹 Kịch bản 4 (KB4): Kiểm soát Đầu vào & Chống SQL Injection (`GET /api/orders/search?keyword=' OR 1=1 --`)
+- **Mục tiêu:** Ngăn chặn chèn mã độc SQL Injection làm rò rỉ cơ sở dữ liệu hoặc gây lỗi `500 Internal Server Error`.
+
+#### 🔴 [BEFORE - Web V1] Ghép chuỗi SQL thô bị khai thác `' OR 1=1 --` làm lộ toàn bộ đơn hàng (`200 OK - LỖ HỔNG`)
+![KB4 Before V1](./screenshots/11_KB4_Before_V1_SQLi_Dumped_200.png)
+
+#### 🟢 [AFTER - Web V2] Bộ lọc Regex Validation & Parameterized LINQ chặn đứng với mã `400 Bad Request`
+![KB4 After V2](./screenshots/12_KB4_After_V2_SQLi_Blocked_400.png)
+
+---
+
+### 🔹 Tổng hợp Chạy tự động 4 Kịch bản Cốt lõi (`Run All KB1–KB4`)
+
+#### 🔴 [BEFORE - Web V1] Cả 4/4 kịch bản cốt lõi đều báo ĐỎ (`HTTP 200 - LỖ HỔNG`)
+![RunAll KB1-4 V1](./screenshots/13a_V1_RunAll.png)
+
+#### 🟢 [AFTER - Web V2] Cả 4/4 kịch bản cốt lõi đều báo XANH (`401`, `403`, `403`, `400 - AN TOÀN`)
+![RunAll KB1-4 V2](./screenshots/13b_V2_RunAll.png)
+
+---
+
+## ⚡ 4. HÌNH ẢNH 4 KỊCH BẢN PHÒNG THỦ CHIỀU SÂU MỞ RỘNG (`KB5 – KB8`)
+
+Bên cạnh 4 kịch bản cốt lõi trong đề cương, hệ thống tích hợp thêm 4 cơ chế phòng thủ nâng cao (`KB5–KB8`):
+- **KB5 (Token Revocation / JTI Blacklist):** Thu hồi JWT ngay khi Logout (`POST /api/auth/logout`), chặn tấn công phát lại Token cũ (`401 Unauthorized - TokenRevoked`).
+- **KB6 (Business Logic, Anti-Mass Assignment & IDOR Sửa/Xóa):** Tự động lấy `UserId` từ JWT, chặn đơn hàng số tiền âm (`-999,999đ` -> `400 Bad Request`), chặn `userA` xóa đơn `#3` của `userB` (`403 Forbidden`).
+- **KB7 (Magic Bytes File Upload Validation):** Kiểm tra chữ ký byte thực tế đầu file (`FF D8 FF`, `89 50 4E 47`, `%PDF`) và chặn đuôi kép `webshell.jpg.aspx` (`400 / 415 Unsupported Media Type`).
+- **KB8 (Rate Limiting & Anti-Brute-Force):** Giới hạn tần suất gọi API (5 req/5s) và khóa tạm thời khi đăng nhập sai liên tiếp (`429 Too Many Requests` kèm `Retry-After: 5s`).
+
+#### 🔴 [BEFORE - Web V1] Chạy liên hoàn `KB5–KB8` trên V1: Phát hiện 4/4 Lỗ hổng mở rộng (`200 OK - LỖ HỔNG`)
+![RunAll KB5-8 V1](./screenshots/15a_V1_RunAll_Extended_KB5_KB8.png)
+
+#### 🟢 [AFTER - Web V2] Chạy liên hoàn `KB5–KB8` trên V2: Chặn đứng 4/4 cuộc tấn công (`401`, `400`, `400/415`, `429 - AN TOÀN`)
+![RunAll KB5-8 V2](./screenshots/15b_V2_RunAll_Extended_KB5_KB8.png)
+
+---
+
+## 🛡️ 5. HÌNH ẢNH OWASP HTTP SECURITY HEADERS & NHẬT KÝ KIỂM TOÁN (`AUDIT LOGS`)
+
+### 🟢 5.1 Kiểm tra trực tiếp 5 OWASP HTTP Security Headers trên Web V2 (`localhost:5002`)
+![OWASP Security Headers V2](./screenshots/16_V2_OWASP_Security_Headers_LiveCheck.png)
+> **Web V2** tự động đính kèm đầy đủ 5 Header bảo mật chuẩn OWASP thông qua `SecurityAuditMiddleware`: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`, `Referrer-Policy: strict-origin-when-cross-origin` và `Content-Security-Policy`.
+
+---
+
+### 🟢 5.2 Bảng Nhật ký Kiểm toán An ninh (`AuditLogs`) theo thời gian thực trên Web V2
+![Security Audit Logs V2](./screenshots/14_V2_Security_Audit_Logs_Table.png)
+> Mọi sự kiện vi phạm an ninh (`401`, `403`, `400`, `415`, `429`) và giao dịch hợp lệ (`200`, `201`) đều được ghi vết đầy đủ vào bảng `AuditLogs` trong SQL Server kèm thời gian, tài khoản, vai trò, địa chỉ IP và nội dung chi tiết.
+
+---
+
+## 📂 6. CẤU TRÚC SOLUTION & HƯỚNG DẪN KHỞI CHẠY
 
 ```
 ĐACN/
-│
-├── SecurityLab.sln                     # File Solution C# mở bằng Visual Studio / VS Code
-├── SecurityLab.slnx                    # File Solution định dạng mới
-├── run_all.ps1 / run_all.bat           # Script khởi chạy đồng thời cả 2 dự án (5001 & 5002)
-├── test_api.ps1 / test_api.bat         # Script PowerShell kiểm thử tự động 17 tiêu chí (KB1–KB8 + Headers + Audit)
+├── SecurityLab.sln                     # File Solution C# (.NET 8.0)
+├── run_all.ps1 / run_all.bat           # Script khởi chạy đồng thời cả 2 Web V1 (5001) & V2 (5002)
+├── test_api.ps1 / test_api.bat         # Script PowerShell kiểm thử tự động 17 tiêu chí (PASS 17/17)
 ├── capture_all_screenshots.py          # Script Playwright tự động chạy Demo & chụp 18 ảnh Full HD
 ├── export_to_word.py                   # Script xuất báo cáo Word BO_MINH_CHUNG_HINH_ANH_BEFORE_AFTER.docx
-├── README.md                           # Hướng dẫn tổng quan hệ thống
-│
-├── WebApi.V1_Vulnerable/               # [PHIÊN BẢN V1 - BASELINE] (Cổng: http://localhost:5001)
-│   ├── wwwroot/                        # Giao diện Web Cyber Dashboard & Simulator V1 (Theme Cảnh báo Đỏ/Cam)
-│   ├── Controllers/                    # AuthController, OrdersController, AdminController (Cố ý chứa lỗ hổng KB1–KB8)
-│   ├── Data/                           # V1DbContext, DbInitializer (Tự động nạp CSDL SecurityLab_V1)
-│   ├── Models/                         # User (Plaintext password), Role, Order, AuditLog
-│   ├── DTOs/                           # AuthDtos, OrderDtos (Cho phép Mass Assignment)
-│   └── Properties/launchSettings.json  # Cấu hình cổng 5001
-│
-├── WebApi.V2_Secure/                   # [PHIÊN BẢN V2 - SECURE] (Cổng: http://localhost:5002)
-│   ├── wwwroot/                        # Giao diện Web Cyber Dashboard & Simulator V2 (Theme Bảo mật Xanh Ngọc)
-│   ├── Controllers/                    # AuthController, OrdersController, AdminController (Đã gia cố KB1–KB8)
-│   ├── Data/                           # V2DbContext, DbInitializer (Tự động nạp CSDL SecurityLab_V2)
-│   ├── Models/                         # User (Băm BCrypt), Role, Order, AuditLog
-│   ├── Middleware/                     # SecurityAuditMiddleware (Gắn OWASP Headers, kiểm tra JTI Blacklist, ghi Audit Log)
-│   ├── Services/                       # AuditLogService, TokenBlacklistService (JTI Revocation), RateLimitingService (429)
-│   ├── DTOs/                           # AuthDtos, CommonDtos, OrderDtos (Chống Mass Assignment)
-│   └── Properties/launchSettings.json  # Cấu hình cổng 5002, Swagger có nút "Authorize" Bearer JWT
-│
-├── sql/
-│   └── init_and_verify.sql             # Toàn bộ mã T-SQL tạo bảng, nạp seed data & truy vấn kiểm chứng SSMS
-│
-├── postman/
-│   └── Postman_Collection_KB1_KB4.json # Bộ kịch bản Postman Collection kiểm thử tự động (Assertions PASS 100%)
-│
-├── screenshots/                        # Thư mục lưu 18 ảnh chụp thực nghiệm Full HD (1920x1080)
-│
+├── WebApi.V1_Vulnerable/               # [WEB V1 - RED TEAM] (http://localhost:5001)
+│   └── README.md                       # Tài liệu chi tiết kèm hình ảnh riêng của Web V1
+├── WebApi.V2_Secure/                   # [WEB V2 - BLUE TEAM] (http://localhost:5002)
+│   └── README.md                       # Tài liệu chi tiết kèm hình ảnh riêng của Web V2
+├── screenshots/                        # Bộ 18 ảnh chụp thực nghiệm Full HD (1920x1080)
 └── docs/
-    ├── MA_TRAN_PHAN_QUYEN_VA_BAO_CAO_BEFORE_AFTER.md # Ma trận phân quyền, Báo cáo Before/After KB1–KB8 & Hướng dẫn ZAP
-    └── BO_MINH_CHUNG_HINH_ANH_BEFORE_AFTER.docx      # Báo cáo Word đính kèm đầy đủ 18 ảnh minh chứng Before/After
+    ├── MA_TRAN_PHAN_QUYEN_VA_BAO_CAO_BEFORE_AFTER.md
+    ├── BO_MINH_CHUNG_HINH_ANH_BEFORE_AFTER.md
+    └── BO_MINH_CHUNG_HINH_ANH_BEFORE_AFTER.docx
 ```
 
----
-
-## 2. DỮ LIỆU MẪU HỆ THỐNG (SEED DATA)
-
-CSDL được tự động khởi tạo khi chạy ứng dụng (`MSSQLLocalDB`). Bạn cũng có thể mở SSMS chạy trực tiếp file [init_and_verify.sql](file:///c:/Users/volen/OneDrive/Documents/DoAnChuyenNganh/%C4%90ACN/sql/init_and_verify.sql).
-
-| Tài khoản (Username) | Mật khẩu | Vai trò (Role) | Họ và tên | Quyền sở hữu đơn hàng |
-| :--- | :--- | :--- | :--- | :--- |
-| `admin` | `Admin@123` | `Admin` | Hệ thống Quản Trị Viên | Toàn quyền xem người dùng, đơn hàng và Audit Log |
-| `staff1` | `Staff@123` | `NhanVien` | Nguyễn Văn Staff | Xem/duyệt toàn bộ đơn hàng, bị cấm truy cập API Admin |
-| `userA` | `UserA@123` | `NguoiDung` | Võ Lê Nhật Hoàng | Chủ sở hữu các đơn hàng: **#1, #2, #5** |
-| `userB` | `UserB@123` | `NguoiDung` | Trần Thị Bích | Chủ sở hữu các đơn hàng: **#3, #4** |
-
----
-
-## 3. CÁCH KHỞI ĐỘNG HỆ THỐNG
-
-### Cách 1: Sử dụng Script tự động `run_all.ps1` hoặc `run_all.bat` (Khuyên dùng)
-Tại thư mục `ĐACN`, mở PowerShell và chạy:
-```powershell
-.\run_all.ps1
-```
-Hệ thống sẽ mở 2 cửa sổ terminal riêng biệt để chạy song song:
-- **Bản V1 (Red Team - Có lỗ hổng):** `http://localhost:5001` (Swagger: `http://localhost:5001/swagger`)
-- **Bản V2 (Blue Team - Đã bảo mật):** `http://localhost:5002` (Swagger: `http://localhost:5002/swagger`)
-
-### Cách 2: Chạy thủ công từng dự án
-- **Terminal 1:**
-  ```powershell
-  dotnet run --project WebApi.V1_Vulnerable/WebApi.V1_Vulnerable.csproj --urls=http://localhost:5001
-  ```
-- **Terminal 2:**
-  ```powershell
-  dotnet run --project WebApi.V2_Secure/WebApi.V2_Secure.csproj --urls=http://localhost:5002
-  ```
-
----
-
-## 4. TỔNG HỢP 8 KỊCH BẢN BẢO MẬT ĐỐI CHỨNG (KB1–KB4 CỐT LÕI & KB5–KB8 MỞ RỘNG)
-
-### 4.1 Bốn kịch bản bảo mật cốt lõi (Khớp 100% Đề cương đã nộp)
-
-| Kịch bản | Tên kịch bản & Endpoint | Bản V1 (Before - Lỗ hổng) | Bản V2 (After - Đã bảo vệ) | Mã chặn |
-| :---: | :--- | :--- | :--- | :---: |
-| **KB1** | Truy cập API khi chưa đăng nhập<br>`GET /api/orders` | Trả về `200 OK` không cần token -> Rò rỉ toàn bộ đơn hàng nội bộ. | Yêu cầu JWT Bearer Token hợp lệ -> Thiếu token bị chặn ngay lập tức. | **401 Unauthorized** |
-| **KB2** | Người dùng thường gọi API quản trị<br>`GET /api/admin/users` | Trả về `200 OK` cho bất kỳ ai -> Lộ toàn bộ tài khoản và mật khẩu thô. | Áp dụng RBAC Policy `AdminOnly` + Băm mật khẩu BCrypt. | **403 Forbidden** |
-| **KB3** | Khai thác BOLA / IDOR xem đơn người khác<br>`GET /api/orders/{id}` | `userA` đổi `id=3` (đơn của `userB`) vẫn xem được dữ liệu bình thường. | Kiểm tra chủ sở hữu (`order.UserId == Claims.UserId`) -> Chặn và ghi Audit Log. | **403 Forbidden** |
-| **KB4** | Đầu vào không hợp lệ / SQL Injection<br>`GET /api/orders/search?keyword=...` | Ghép chuỗi SQL thô -> Bị khai thác `' OR 1=1 --` lộ sạch CSDL hoặc lỗi `500`. | Input Validation (Regex + độ dài) + Parameterized EF Core LINQ. | **400 Bad Request** |
-
-### 4.2 Bốn kịch bản phòng thủ chiều sâu mở rộng (Defense-in-Depth)
-
-| Kịch bản | Tên kịch bản & Endpoint | Bản V1 (Before - Lỗ hổng) | Bản V2 (After - Đã bảo vệ) | Mã chặn |
-| :---: | :--- | :--- | :--- | :---: |
-| **KB5** | Quản lý vòng đời JWT & Thu hồi Token khi Logout<br>`POST /api/auth/logout` -> `GET /api/auth/me` | Logout chỉ xóa ở client; kẻ tấn công phát lại (Replay) JWT cũ vẫn gọi được API (`200 OK`). | Lưu `JTI` vào `TokenBlacklistService` khi Logout; Middleware chặn mọi JWT đã thu hồi. | **401 Unauthorized**<br>*(TokenRevoked)* |
-| **KB6** | Lỗi Logic nghiệp vụ, Mass Assignment & IDOR Sửa/Xóa<br>`POST /api/orders` \| `PUT/DELETE /api/orders/{id}` | Cho phép tạo đơn số tiền âm (`-999,999đ`), giả mạo `UserId`/`Status="Completed"`, xóa đơn của `userB`. | Tự động lấy `UserId` từ JWT, bắt buộc `TotalAmount > 0`, kiểm tra chủ sở hữu khi Sửa/Xóa. | **400 Bad Request** /<br>**403 Forbidden** |
-| **KB7** | Kiểm tra Chữ ký Byte (Magic Bytes) khi Upload tệp<br>`POST /api/orders/{id}/upload` | Chấp nhận mọi file theo tên, cho phép tải lên `webshell.jpg.aspx` hoặc script giả mạo ảnh. | Chặn Path Traversal, chặn Double Extension, kiểm tra **Magic Bytes** đầu file (`FF D8 FF`, `89 50 4E 47`, `%PDF`). | **400 / 415**<br>*(UnsupportedMediaType)* |
-| **KB8** | Chống Brute-Force Login & Rate Limiting Spam API<br>`POST /api/auth/login` \| `GET /api/orders/rate-test` | Không giới hạn tần suất request -> Dễ bị tấn công từ điển (Brute-force) và làm nghẽn API (DoS). | `RateLimitingService` khóa tạm thời khi sai mật khẩu > 5 lần hoặc vượt ngưỡng 5 req/5s kèm `Retry-After`. | **429 Too Many Requests** |
-
----
-
-## 5. HƯỚNG DẪN KIỂM THỬ
-
-### 5.1 Kiểm thử tự động 17 tiêu chí bằng PowerShell
-Khi 2 bản API đang chạy, mở PowerShell và thực thi:
-```powershell
-.\test_api.ps1
-```
-Script sẽ tự động chạy **17 bước kiểm thử đối chứng** (bao gồm `KB1–KB8`, kiểm tra `OWASP HTTP Security Headers` và kiểm tra bảng `AuditLogs`) và xác nhận **PASS 17/17**.
-
-### 5.2 Kiểm thử bằng Postman
-1. Mở Postman -> **Import** -> chọn [Postman_Collection_KB1_KB4.json](file:///c:/Users/volen/OneDrive/Documents/DoAnChuyenNganh/%C4%90ACN/postman/Postman_Collection_KB1_KB4.json).
-2. Chạy lần lượt các thư mục từ `00` đến `05`. Tất cả các Assertions đều tự động kiểm tra mã phản hồi (`200`, `401`, `403`, `400`), token và cấu trúc dữ liệu trả về.
-
-### 5.3 Đối chiếu trực tiếp trên SQL Server (SSMS)
-Mở SSMS, kết nối tới `(localdb)\MSSQLLocalDB` và mở file [init_and_verify.sql](file:///c:/Users/volen/OneDrive/Documents/DoAnChuyenNganh/%C4%90ACN/sql/init_and_verify.sql) để thực thi các câu truy vấn kiểm chứng.
-
-### 5.4 Quét kiểm thử bảo mật bằng OWASP ZAP
-Xem hướng dẫn chi tiết từng bước trong tài liệu [MA_TRAN_PHAN_QUYEN_VA_BAO_CAO_BEFORE_AFTER.md](file:///c:/Users/volen/OneDrive/Documents/DoAnChuyenNganh/%C4%90ACN/docs/MA_TRAN_PHAN_QUYEN_VA_BAO_CAO_BEFORE_AFTER.md).
+### Cách khởi chạy nhanh:
+1. **Khởi động đồng thời cả 2 Web V1 (`5001`) và Web V2 (`5002`):**
+   ```powershell
+   .\run_all.ps1
+   ```
+2. **Chạy kiểm thử tự động 17/17 tiêu chí bảo mật:**
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\test_api.ps1
+   ```
+3. **Danh sách tài khoản mẫu (Seed Data):**
+   - **Quản trị viên (`Admin`):** `admin` / `Admin@123`
+   - **Nhân viên (`NhanVien`):** `staff1` / `Staff@123`
+   - **Khách hàng A (`NguoiDung` - Đơn #1, #2, #5):** `userA` / `UserA@123`
+   - **Khách hàng B (`NguoiDung` - Đơn #3, #4):** `userB` / `UserB@123`
