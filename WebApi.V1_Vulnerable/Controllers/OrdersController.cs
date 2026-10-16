@@ -208,7 +208,7 @@ namespace WebApi.V1_Vulnerable.Controllers
         /// Không kiểm tra Magic Bytes, chấp nhận mọi loại tệp độc hại và không lọc đường dẫn.
         /// </summary>
         [HttpPost("{id}/upload")]
-        public IActionResult UploadAttachment(int id, [FromForm] IFormFile? file)
+        public IActionResult UploadAttachment(int id, IFormFile? file)
         {
             if (file == null || file.Length == 0)
             {

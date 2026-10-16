@@ -649,3 +649,197 @@ body[data-version="V2"] .version-banner {
   flex-wrap: wrap;
   gap: 10px;
 }
+
+/* ==========================================================================
+   TWO-VIEW ARCHITECTURE: LOGIN PORTAL & DASHBOARD STYLES
+   ========================================================================== */
+
+/* LOGIN PAGE WRAPPER */
+.login-page-wrapper {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px 60px;
+}
+
+.login-card-container {
+  width: 100%;
+  max-width: 580px;
+  background: rgba(17, 24, 39, 0.92);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px var(--accent-glow);
+  overflow: hidden;
+  animation: loginFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes loginFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.login-card-header {
+  padding: 28px 28px 18px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: center;
+  background: linear-gradient(180deg, var(--accent-subtle) 0%, transparent 100%);
+}
+
+.login-brand-icon {
+  font-size: 2.8rem;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 12px var(--accent-glow));
+}
+
+.login-main-title {
+  font-size: 1.32rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.login-sub-title {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.login-card-body {
+  padding: 24px 28px;
+}
+
+.login-section-caption {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.login-quick-accounts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.login-form-box {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 18px 0;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.login-divider span {
+  padding: 0 12px;
+}
+
+.anonymous-portal-card {
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px dashed rgba(249, 115, 22, 0.4);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+}
+
+body[data-version="V2"] .anonymous-portal-card {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.login-card-footer {
+  padding: 16px 28px 20px;
+  border-top: 1px solid var(--border-color);
+  background: rgba(10, 13, 20, 0.5);
+  text-align: center;
+}
+
+.student-info-mini {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.login-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* NAVBAR USER SESSION */
+.nav-user-session {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid var(--border-color);
+  padding: 4px 12px 4px 6px;
+  border-radius: var(--radius-full);
+}
+
+.nav-user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-avatar-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.nav-user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-user-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.nav-user-role {
+  font-size: 0.64rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  width: fit-content;
+}
+

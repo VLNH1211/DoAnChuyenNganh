@@ -14,7 +14,8 @@ const state = {
   decodedClaims: null,
   activeTab: "orders",
   auditLogsFilter: null,
-  lastRevokedToken: ""
+  lastRevokedToken: "",
+  currentView: "login"
 };
 
 // QUICK ACCOUNTS PRESETS
@@ -35,7 +36,71 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function initUI() {
   document.body.setAttribute("data-version", APP_CONFIG.version);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const requestedView = urlParams.get("view");
+  const savedToken = sessionStorage.getItem("cyberlab_token");
+  const savedUser = sessionStorage.getItem("cyberlab_user");
+
+  if (requestedView === "dashboard") {
+    showView("dashboard");
+  } else if (savedToken && savedUser) {
+    try {
+      state.token = savedToken;
+      state.user = JSON.parse(savedUser);
+      state.decodedClaims = parseJwt(savedToken);
+      showView("dashboard");
+    } catch (e) {
+      showView("login");
+    }
+  } else {
+    showView("login");
+  }
+
   updateSessionUI();
+}
+
+// CHUYỂN ĐỔI GIỮA MÀN HÌNH ĐĂNG NHẬP VÀ DASHBOARD
+function showView(viewName) {
+  state.currentView = viewName;
+  const loginView = document.getElementById("viewLogin");
+  const dashView = document.getElementById("viewDashboard");
+  const navUserSession = document.getElementById("navUserSession");
+
+  if (viewName === "dashboard") {
+    if (loginView) loginView.style.display = "none";
+    if (dashView) dashView.style.display = "block";
+    if (navUserSession) navUserSession.style.display = "flex";
+  } else {
+    if (dashView) dashView.style.display = "none";
+    if (loginView) loginView.style.display = "flex";
+    if (navUserSession) navUserSession.style.display = "none";
+  }
+}
+
+// VÀO THẲNG DASHBOARD Ở CHẾ ĐỘ NẶC DANH ĐỂ DEMO KB1
+function enterAnonymousMode() {
+  state.token = "";
+  state.user = null;
+  state.decodedClaims = null;
+  sessionStorage.removeItem("cyberlab_token");
+  sessionStorage.removeItem("cyberlab_user");
+
+  showView("dashboard");
+  updateSessionUI();
+  loadOrders();
+  loadAuditLogs();
+  showToast("Đã vào Dashboard ở chế độ Nặc danh (Không kèm Token) - Sẵn sàng demo KB1!", "info");
+}
+
+// XỬ LÝ ĐĂNG XUẤT TỪ THANH NAVBAR
+async function handleNavLogout() {
+  if (state.token) {
+    await performLogout();
+  } else {
+    showToast("Đã quay về màn hình Đăng nhập!", "info");
+    showView("login");
+  }
 }
 
 // FORMAT TIỀN TỆ VNĐ
@@ -77,26 +142,58 @@ function parseJwt(token) {
 
 // CẬP NHẬT HIỂN THỊ PHIÊN ĐĂNG NHẬP
 function updateSessionUI() {
+  // Elements in Dashboard
   const avatarEl = document.getElementById("userAvatar");
   const nameEl = document.getElementById("userDisplayName");
   const roleEl = document.getElementById("userRoleBadge");
   const rawTokenEl = document.getElementById("rawTokenText");
   const decodedClaimsEl = document.getElementById("decodedClaimsText");
 
+  // Elements in Navbar
+  const navAvatarEl = document.getElementById("navUserAvatar");
+  const navNameEl = document.getElementById("navUserName");
+  const navRoleEl = document.getElementById("navUserRole");
+  const btnNavLogout = document.getElementById("btnNavLogout");
+
   if (state.token && state.user) {
-    avatarEl.textContent = state.user.username.charAt(0).toUpperCase();
-    nameEl.textContent = state.user.fullName || state.user.username;
-    roleEl.textContent = state.user.role;
-    roleEl.className = "badge " + (state.user.role === "Admin" ? "badge-purple" : state.user.role === "NhanVien" ? "badge-blue" : "badge-green");
-    rawTokenEl.textContent = state.token;
-    decodedClaimsEl.textContent = JSON.stringify(state.decodedClaims, null, 2);
+    const initial = state.user.username.charAt(0).toUpperCase();
+    const fullName = state.user.fullName || state.user.username;
+    const role = state.user.role;
+    const roleBadgeClass = "badge " + (role === "Admin" ? "badge-purple" : role === "NhanVien" ? "badge-blue" : "badge-green");
+
+    if (avatarEl) avatarEl.textContent = initial;
+    if (nameEl) nameEl.textContent = fullName;
+    if (roleEl) {
+      roleEl.textContent = role;
+      roleEl.className = roleBadgeClass;
+    }
+    if (rawTokenEl) rawTokenEl.textContent = state.token;
+    if (decodedClaimsEl) decodedClaimsEl.textContent = JSON.stringify(state.decodedClaims, null, 2);
+
+    if (navAvatarEl) navAvatarEl.textContent = initial;
+    if (navNameEl) navNameEl.textContent = fullName;
+    if (navRoleEl) {
+      navRoleEl.textContent = role;
+      navRoleEl.className = roleBadgeClass + " nav-user-role";
+    }
+    if (btnNavLogout) btnNavLogout.textContent = "🚪 Đăng xuất";
   } else {
-    avatarEl.textContent = "?";
-    nameEl.textContent = "Chưa đăng nhập (Anonymous)";
-    roleEl.textContent = "No Token";
-    roleEl.className = "badge badge-orange";
-    rawTokenEl.textContent = "(Chưa có Token được cấp)";
-    decodedClaimsEl.textContent = '{\n  "status": "Unauthenticated",\n  "message": "Vui lòng chọn tài khoản để đăng nhập và lấy JWT Token"\n}';
+    if (avatarEl) avatarEl.textContent = "?";
+    if (nameEl) nameEl.textContent = "Chưa đăng nhập (Anonymous)";
+    if (roleEl) {
+      roleEl.textContent = "No Token";
+      roleEl.className = "badge badge-orange";
+    }
+    if (rawTokenEl) rawTokenEl.textContent = "(Chưa có Token được cấp)";
+    if (decodedClaimsEl) decodedClaimsEl.textContent = '{\n  "status": "Unauthenticated",\n  "message": "Vui lòng chọn tài khoản để đăng nhập và lấy JWT Token"\n}';
+
+    if (navAvatarEl) navAvatarEl.textContent = "?";
+    if (navNameEl) navNameEl.textContent = "Khách Nặc Danh (Anonymous)";
+    if (navRoleEl) {
+      navRoleEl.textContent = "No Token";
+      navRoleEl.className = "badge badge-orange nav-user-role";
+    }
+    if (btnNavLogout) btnNavLogout.textContent = "🔑 Đăng nhập";
   }
 }
 
@@ -106,20 +203,15 @@ function quickLogin(accountKey) {
   if (!acc) return;
 
   if (accountKey === "anonymous") {
-    state.token = "";
-    state.user = null;
-    state.decodedClaims = null;
-    document.getElementById("loginUsername").value = "";
-    document.getElementById("loginPassword").value = "";
-    updateSessionUI();
-    showToast("Đã chuyển sang trạng thái Chưa đăng nhập (Anonymous)", "info");
-    loadOrders();
-    loadAuditLogs();
+    enterAnonymousMode();
     return;
   }
 
-  document.getElementById("loginUsername").value = acc.username;
-  document.getElementById("loginPassword").value = acc.password;
+  const userInp = document.getElementById("loginUsername");
+  const passInp = document.getElementById("loginPassword");
+  if (userInp) userInp.value = acc.username;
+  if (passInp) passInp.value = acc.password;
+
   performLogin(acc.username, acc.password);
 }
 
@@ -131,8 +223,10 @@ async function performLogin(username, password) {
   }
 
   const btn = document.getElementById("btnLogin");
-  btn.disabled = true;
-  btn.textContent = "Đang xử lý...";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Đang xử lý...";
+  }
 
   try {
     const res = await callApi("POST", "/api/auth/login", { username, password }, false);
@@ -146,7 +240,11 @@ async function performLogin(username, password) {
       };
       state.decodedClaims = parseJwt(res.data.token);
 
+      sessionStorage.setItem("cyberlab_token", res.data.token);
+      sessionStorage.setItem("cyberlab_user", JSON.stringify(state.user));
+
       updateSessionUI();
+      showView("dashboard");
       showToast(`Đăng nhập thành công với vai trò: ${res.data.role}`, "success");
 
       loadOrders();
@@ -157,8 +255,10 @@ async function performLogin(username, password) {
   } catch (err) {
     showToast("Lỗi kết nối máy chủ khi đăng nhập!", "error");
   } finally {
-    btn.disabled = false;
-    btn.textContent = "Đăng nhập";
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "🔐 ĐĂNG NHẬP VÀO HỆ THỐNG";
+    }
   }
 }
 
@@ -166,6 +266,7 @@ async function performLogin(username, password) {
 async function performLogout() {
   if (!state.token) {
     showToast("Bạn chưa đăng nhập để thực hiện đăng xuất!", "info");
+    showView("login");
     return;
   }
 
@@ -177,9 +278,16 @@ async function performLogout() {
   state.token = "";
   state.user = null;
   state.decodedClaims = null;
-  document.getElementById("loginUsername").value = "";
-  document.getElementById("loginPassword").value = "";
+  sessionStorage.removeItem("cyberlab_token");
+  sessionStorage.removeItem("cyberlab_user");
+
+  const userInp = document.getElementById("loginUsername");
+  const passInp = document.getElementById("loginPassword");
+  if (userInp) userInp.value = "";
+  if (passInp) passInp.value = "";
+
   updateSessionUI();
+  showView("login");
 
   showToast("[V1] Server phản hồi đăng xuất thành công nhưng KHÔNG thu hồi Token!", "info");
 
@@ -518,11 +626,15 @@ function updateAuditCounters(logs) {
 }
 
 // =========================================================================
-// 1-CLICK KB1–KB4 SIMULATOR (CỐT LÕI)
+// 1-CLICK KB1–KB4 SIMULATOR (CỐT LÕI - SAFE FALLBACKS)
 // =========================================================================
 
+function getKbResult(id) {
+  return document.getElementById(id) || { className: "", innerHTML: "", style: {} };
+}
+
 async function runKB1() {
-  const resultEl = document.getElementById("kb1Result");
+  const resultEl = getKbResult("kb1Result");
   resultEl.className = "kb-result show";
   resultEl.innerHTML = "Đang gửi request không có JWT Token...";
 
@@ -543,7 +655,7 @@ async function runKB1() {
 }
 
 async function runKB2() {
-  const resultEl = document.getElementById("kb2Result");
+  const resultEl = getKbResult("kb2Result");
   resultEl.className = "kb-result show";
   resultEl.innerHTML = "Đang gửi request với quyền Người dùng thường (userA)...";
 
@@ -572,7 +684,7 @@ async function runKB2() {
 }
 
 async function runKB3() {
-  const resultEl = document.getElementById("kb3Result");
+  const resultEl = getKbResult("kb3Result");
   resultEl.className = "kb-result show";
   resultEl.innerHTML = "Đang gửi request: userA xem đơn #3 của userB...";
 
@@ -601,7 +713,7 @@ async function runKB3() {
 }
 
 async function runKB4() {
-  const resultEl = document.getElementById("kb4Result");
+  const resultEl = getKbResult("kb4Result");
   resultEl.className = "kb-result show";
   resultEl.innerHTML = "Đang gửi payload SQL Injection: ' OR 1=1 --...";
 
@@ -623,8 +735,10 @@ async function runKB4() {
 
 async function runAllKB() {
   const btn = document.getElementById("btnRunAllKB");
-  btn.disabled = true;
-  btn.textContent = "Đang chạy 4 kịch bản cốt lõi...";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Đang chạy 4 kịch bản cốt lõi...";
+  }
 
   const r1 = await runKB1();
   await new Promise(r => setTimeout(r, 400));
@@ -635,29 +749,33 @@ async function runAllKB() {
   const r4 = await runKB4();
 
   const summaryEl = document.getElementById("runAllSummary");
-  summaryEl.style.display = "block";
-  summaryEl.innerHTML = `
-    <div style="padding: 14px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: 8px;">
-      <div style="font-weight: 700; margin-bottom: 8px; color: #f87171;">Bảng tổng hợp kết quả 4 kịch bản cốt lõi (${APP_CONFIG.version}):</div>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
-        <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
-          <strong>KB1 (Xác thực):</strong><br>HTTP ${r1.status} - LỖ HỔNG
-        </div>
-        <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
-          <strong>KB2 (RBAC):</strong><br>HTTP ${r2.status} - LỖ HỔNG
-        </div>
-        <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
-          <strong>KB3 (BOLA/IDOR):</strong><br>HTTP ${r3.status} - LỖ HỔNG
-        </div>
-        <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
-          <strong>KB4 (SQLi):</strong><br>HTTP ${r4.status} - LỖ HỔNG
+  if (summaryEl) {
+    summaryEl.style.display = "block";
+    summaryEl.innerHTML = `
+      <div style="padding: 14px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: 8px;">
+        <div style="font-weight: 700; margin-bottom: 8px; color: #f87171;">Bảng tổng hợp kết quả 4 kịch bản cốt lõi (${APP_CONFIG.version}):</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+          <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
+            <strong>KB1 (Xác thực):</strong><br>HTTP ${r1.status} - LỖ HỔNG
+          </div>
+          <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
+            <strong>KB2 (RBAC):</strong><br>HTTP ${r2.status} - LỖ HỔNG
+          </div>
+          <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
+            <strong>KB3 (BOLA/IDOR):</strong><br>HTTP ${r3.status} - LỖ HỔNG
+          </div>
+          <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
+            <strong>KB4 (SQLi):</strong><br>HTTP ${r4.status} - LỖ HỔNG
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
+  }
 
-  btn.disabled = false;
-  btn.textContent = "Chạy lại 4 kịch bản cốt lõi (Run All KB1–KB4)";
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "Chạy lại 4 kịch bản cốt lõi (Run All KB1–KB4)";
+  }
   showToast("Hoàn tất kiểm thử 4 kịch bản trên V1!", "info");
 }
 
@@ -667,7 +785,7 @@ async function runAllKB() {
 
 // KB5: Thử nghiệm Token Replay trên V1
 async function runKB5() {
-  const resultEl = document.getElementById("kb5Result");
+  const resultEl = getKbResult("kb5Result");
   resultEl.className = "kb-result show";
   resultEl.innerHTML = "Đăng nhập userA -> Logout -> Dùng lại Token cũ gọi /api/auth/me...";
 
@@ -702,7 +820,7 @@ async function runKB5() {
 
 // KB6a: Business Logic Flaw (Tiền âm trên V1)
 async function runKB6Logic() {
-  const resultEl = document.getElementById("kb6Result");
+  const resultEl = getKbResult("kb6Result");
   resultEl.className = "kb-result show";
   resultEl.innerHTML = "Đang gửi yêu cầu tạo đơn hàng với số tiền âm: -999,999 VNĐ...";
 
@@ -725,7 +843,7 @@ async function runKB6Logic() {
 
 // KB6b: IDOR khi Xóa đơn người khác trên V1
 async function runKB6IdorDelete() {
-  const resultEl = document.getElementById("kb6Result");
+  const resultEl = getKbResult("kb6Result");
   resultEl.className = "kb-result show";
   resultEl.innerHTML = "userA gửi yêu cầu xóa đơn #3 của userB (DELETE /api/orders/3)...";
 
@@ -748,7 +866,7 @@ async function runKB6IdorDelete() {
 
 // KB7: File Upload trên V1
 async function runKB7() {
-  const resultEl = document.getElementById("kb7Result");
+  const resultEl = getKbResult("kb7Result");
   resultEl.className = "kb-result show";
   resultEl.innerHTML = "Đang gửi tệp 'webshell.jpg.aspx' chứa script text...";
 
@@ -775,7 +893,7 @@ async function runKB7() {
 
 // KB8: Không có Rate Limit trên V1
 async function runKB8() {
-  const resultEl = document.getElementById("kb8Result");
+  const resultEl = getKbResult("kb8Result");
   resultEl.className = "kb-result show";
   resultEl.innerHTML = "Đang gửi liên tục 8 requests spam vào /api/orders/rate-test...";
 
@@ -798,8 +916,10 @@ async function runKB8() {
 // CHẠY TẤT CẢ KỊCH BẢN MỞ RỘNG (RUN ALL KB5–KB8)
 async function runAllExtKB() {
   const btn = document.getElementById("btnRunAllExtKB");
-  btn.disabled = true;
-  btn.textContent = "Đang chạy kịch bản mở rộng...";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Đang chạy kịch bản mở rộng...";
+  }
 
   const r5 = await runKB5();
   await new Promise(r => setTimeout(r, 400));
@@ -810,30 +930,33 @@ async function runAllExtKB() {
   const r8 = await runKB8();
 
   const summaryEl = document.getElementById("runAllExtSummary");
-  summaryEl.style.display = "block";
-  summaryEl.innerHTML = `
-    <div style="padding: 14px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: 8px;">
-      <div style="font-weight: 700; margin-bottom: 8px; color: #f87171;">Bảng tổng hợp kết quả kịch bản mở rộng (${APP_CONFIG.version}):</div>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
-        <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
-          <strong>KB5 (Token Replay):</strong><br>HTTP ${r5.status} - LỖ HỔNG
-        </div>
-        <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
-          <strong>KB6 (Business Logic):</strong><br>HTTP ${r6.status} - LỖ HỔNG
-        </div>
-        <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
-          <strong>KB7 (File Upload):</strong><br>HTTP ${r7.status} - LỖ HỔNG
-        </div>
-        <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
-          <strong>KB8 (No Rate Limit):</strong><br>HTTP 200 - LỖ HỔNG
+  if (summaryEl) {
+    summaryEl.style.display = "block";
+    summaryEl.innerHTML = `
+      <div style="padding: 14px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: 8px;">
+        <div style="font-weight: 700; margin-bottom: 8px; color: #f87171;">Bảng tổng hợp kết quả kịch bản mở rộng (${APP_CONFIG.version}):</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+          <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
+            <strong>KB5 (Replay):</strong><br>HTTP ${r5.status} - LỖ HỔNG
+          </div>
+          <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
+            <strong>KB6 (Logic/IDOR):</strong><br>HTTP ${r6.status} / ${r6.status}
+          </div>
+          <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
+            <strong>KB7 (Upload):</strong><br>HTTP ${r7.status} - LỖ HỔNG
+          </div>
+          <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
+            <strong>KB8 (Spam):</strong><br>HTTP 200 (${r8.count200}/8)
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
+  }
 
-  btn.disabled = false;
-  btn.textContent = "Chạy lại kịch bản mở rộng (Run All KB5–KB8)";
-  showToast("Hoàn tất kiểm thử kịch bản mở rộng trên V1!", "info");
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "Chạy lại kịch bản mở rộng (Run All KB5–KB8)";
+  }
 }
 
 // KIỂM TRA HTTP SECURITY HEADERS THỰC TẾ

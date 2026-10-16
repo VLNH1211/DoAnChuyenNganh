@@ -23,14 +23,8 @@ builder.Services.AddSwaggerGen(c =>
         Title = "SecurityLab API - V1_Vulnerable (HUTECH ATTT)",
         Version = "v1",
         Description = "Hệ thống Thực nghiệm An toàn thông tin - Phiên bản V1 (Baseline: Cố ý thiếu các cơ chế bảo mật KB1–KB4)\n\n" +
-                      "Sinh viên thực hiện: Võ Lê Nhật Hoàng (MSSV: 2387700017 - Lớp: 23DATA1)\n" +
                       "Đề tài: XÂY DỰNG VÀ KIỂM THỬ CÁC CƠ CHẾ BẢO MẬT CHO ỨNG DỤNG WEB/API DỰA TRÊN XÁC THỰC, PHÂN QUYỀN VÀ KIỂM SOÁT TRUY CẬP\n\n" +
-                      "Cổng chạy: http://localhost:5001",
-        Contact = new OpenApiContact
-        {
-            Name = "Võ Lê Nhật Hoàng",
-            Email = "2387700017@student.hutech.edu.vn"
-        }
+                      "Cổng chạy: http://localhost:5001"
     });
 });
 

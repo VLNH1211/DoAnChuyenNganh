@@ -25,10 +25,19 @@
         </div>
       </div>
 
-      <div class="student-badge">
-        <span>🎓 Sinh viên: <strong>Võ Lê Nhật Hoàng</strong></span>
-        <span>• MSSV: <strong>2387700017</strong></span>
-        <span>• Lớp: <strong>23DATA1</strong></span>
+
+      <!-- DYNAMIC USER SESSION IN NAVBAR (HIỂN THỊ KHI Ở DASHBOARD) -->
+      <div id="navUserSession" class="nav-user-session" style="display: none;">
+        <div class="nav-user-info">
+          <div id="navUserAvatar" class="user-avatar-sm">?</div>
+          <div class="nav-user-details">
+            <span id="navUserName" class="nav-user-name">Khách Nặc Danh</span>
+            <span id="navUserRole" class="badge badge-orange nav-user-role">Anonymous</span>
+          </div>
+        </div>
+        <button id="btnNavLogout" class="btn btn-secondary btn-sm" onclick="handleNavLogout()" title="Đăng xuất / Về cổng đăng nhập">
+          🚪 Đăng xuất
+        </button>
       </div>
 
       <div class="nav-actions">
@@ -42,7 +51,90 @@
     </div>
   </nav>
 
-  <div class="container">
+  <!-- VIEW 1: CỔNG ĐĂNG NHẬP (LOGIN PORTAL) -->
+  <div id="viewLogin" class="login-page-wrapper">
+    <div class="login-card-container">
+      <div class="login-card-header">
+        <div class="login-brand-icon">⚠️</div>
+        <h1 class="login-main-title">CỔNG XÁC THỰC AN TOÀN THÔNG TIN</h1>
+        <div class="login-sub-title">Hệ Thống Thực Nghiệm Web/API - Nền Tảng ASP.NET Core 8.0</div>
+        <div>
+          <span class="badge badge-orange" style="font-size: 0.78rem; padding: 4px 10px;">⚠️ PHIÊN BẢN V1 - BASELINE TRƯỚC PHÒNG THỦ [5001]</span>
+        </div>
+      </div>
+
+      <div class="login-card-body">
+        <div class="login-section-caption">
+          <span>⚡ Chọn nhanh tài khoản mẫu (1-Click Đăng nhập ngay):</span>
+        </div>
+        <div class="login-quick-accounts">
+          <div class="quick-acc-btn" onclick="quickLogin('userA')">
+            <div class="quick-acc-name">👤 userA (Hoàng)</div>
+            <div class="quick-acc-role">Khách hàng (Đơn #1, #2, #5)</div>
+          </div>
+          <div class="quick-acc-btn" onclick="quickLogin('userB')">
+            <div class="quick-acc-name">👤 userB (Bích)</div>
+            <div class="quick-acc-role">Khách hàng (Đơn #3, #4)</div>
+          </div>
+          <div class="quick-acc-btn" onclick="quickLogin('staff1')">
+            <div class="quick-acc-name">👔 staff1 (Staff)</div>
+            <div class="quick-acc-role">Nhân viên (NhanVien)</div>
+          </div>
+          <div class="quick-acc-btn" onclick="quickLogin('admin')">
+            <div class="quick-acc-name">👑 admin (Quản Trị)</div>
+            <div class="quick-acc-role">Toàn quyền (Admin)</div>
+          </div>
+        </div>
+
+        <div class="login-form-box">
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px;">
+            Hoặc nhập thông tin tài khoản:
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label class="form-label">Tên đăng nhập (Username):</label>
+            <input type="text" id="loginUsername" class="form-input" placeholder="Nhập username (vd: userA, admin...)">
+          </div>
+          <div style="margin-bottom: 14px;">
+            <label class="form-label">Mật khẩu (Password):</label>
+            <input type="password" id="loginPassword" class="form-input" placeholder="Nhập mật khẩu (vd: UserA@123, Admin@123...)">
+          </div>
+          <button id="btnLogin" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px 16px; font-weight: 700;" onclick="performLogin(document.getElementById('loginUsername').value, document.getElementById('loginPassword').value)">
+            🔐 ĐĂNG NHẬP VÀO HỆ THỐNG
+          </button>
+        </div>
+
+        <div class="login-divider">
+          <span>HOẶC KIỂM THỬ AN NINH (CYBER LAB)</span>
+        </div>
+
+        <div class="anonymous-portal-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <span style="font-weight: 700; font-size: 0.85rem; color: #fb923c;">🎯 Kiểm thử Kịch bản KB1 (Broken Authentication)</span>
+            <span class="badge badge-orange">Không Cần Token</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
+            Vào thẳng Dashboard với tư cách kẻ tấn công nặc danh (Anonymous) để kiểm thử việc gọi API không kèm JWT Token.
+          </div>
+          <button class="btn btn-secondary" style="width: 100%; justify-content: center; border-color: #f97316; color: #fb923c; font-weight: 600;" onclick="enterAnonymousMode()">
+            🕵️ Bỏ Qua Đăng Nhập / Vào Chế Độ Nặc Danh (Test KB1)
+          </button>
+        </div>
+      </div>
+
+      <div class="login-card-footer">
+        <div class="student-info-mini">
+          🛡️ Hệ Thống Thực Nghiệm An Toàn Thông Tin Web/API
+        </div>
+        <div class="login-footer-links">
+          <a href="http://localhost:5002" class="btn-tag" style="border-color: #10b981; color: #34d399;">&rarr; Sang Bản V2 Bảo Mật [5002]</a>
+          <a href="/swagger" target="_blank" class="btn-tag" style="border-color: #38bdf8; color: #38bdf8;">📜 Swagger UI</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: MÀN HÌNH DASHBOARD QUẢN TRỊ & THỰC NGHIỆM -->
+  <div id="viewDashboard" class="container" style="display: none;">
 
     <!-- VERSION BANNER -->
     <div class="version-banner">
@@ -68,216 +160,29 @@
       </div>
     </div>
 
-    <!-- HÀNG 1: 1-CLICK KB1–KB4 SIMULATOR -->
-    <div class="card" style="margin-bottom: 24px;">
-      <div class="card-header">
-        <div>
-          <div class="card-title">
-            🎯 4 Kịch Bản Lỗ Hổng Cốt Lõi KB1–KB4 (Khớp 100% Đề Cương Nghiên Cứu)
-          </div>
-          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
-            Mô phỏng 4 điểm yếu cơ sở: Không cần token vẫn xem đơn (200), Người dùng thường gọi API Admin (200), IDOR xem trộm đơn (200) và SQL Injection bypass/dump dữ liệu (200).
-          </div>
-        </div>
-        <button id="btnRunAllKB" class="btn btn-primary" onclick="runAllKB()">
-          ▶ Chạy tất cả 4 kịch bản (Run All KB1–KB4)
-        </button>
-      </div>
-
-      <div class="grid-4">
-        <!-- CARD KB1 -->
-        <div class="kb-card">
-          <div>
-            <div class="kb-header">
-              <span class="kb-tag">KỊCH BẢN 1 (MT1)</span>
-              <span class="badge badge-orange">Kết quả: 200 OK</span>
-            </div>
-            <div class="kb-title">Chưa đăng nhập gọi API</div>
-            <div class="kb-desc">Gửi yêu cầu GET không kèm JWT Token. Bản V1 trả về 200 OK kèm toàn bộ dữ liệu do thiếu [Authorize].</div>
-            <div class="kb-endpoint">GET /api/orders</div>
-          </div>
-          <div>
-            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB1()">
-              Thử nghiệm KB1
-            </button>
-            <div id="kb1Result" class="kb-result"></div>
-          </div>
-        </div>
-
-        <!-- CARD KB2 -->
-        <div class="kb-card">
-          <div>
-            <div class="kb-header">
-              <span class="kb-tag">KỊCH BẢN 2 (MT2)</span>
-              <span class="badge badge-orange">Kết quả: 200 OK</span>
-            </div>
-            <div class="kb-title">Người dùng gọi API Admin</div>
-            <div class="kb-desc">Dùng tài khoản thường (userA) gọi API Quản trị. Bản V1 thiếu Role check, làm lộ mật khẩu plaintext và danh sách user.</div>
-            <div class="kb-endpoint">GET /api/admin/users</div>
-          </div>
-          <div>
-            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB2()">
-              Thử nghiệm KB2
-            </button>
-            <div id="kb2Result" class="kb-result"></div>
-          </div>
-        </div>
-
-        <!-- CARD KB3 -->
-        <div class="kb-card">
-          <div>
-            <div class="kb-header">
-              <span class="kb-tag">KỊCH BẢN 3 (MT3)</span>
-              <span class="badge badge-orange">Kết quả: 200 OK</span>
-            </div>
-            <div class="kb-title">Khai thác BOLA / IDOR</div>
-            <div class="kb-desc">userA đổi ID sang đơn #3 của userB. Bản V1 không kiểm tra UserId chủ sở hữu, trả về 200 OK xem trộm đơn hàng.</div>
-            <div class="kb-endpoint">GET /api/orders/3</div>
-          </div>
-          <div>
-            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB3()">
-              Thử nghiệm KB3
-            </button>
-            <div id="kb3Result" class="kb-result"></div>
-          </div>
-        </div>
-
-        <!-- CARD KB4 -->
-        <div class="kb-card">
-          <div>
-            <div class="kb-header">
-              <span class="kb-tag">KỊCH BẢN 4 (MT4)</span>
-              <span class="badge badge-orange">Kết quả: 200 OK</span>
-            </div>
-            <div class="kb-title">Tấn công SQL Injection</div>
-            <div class="kb-desc">Gửi payload '?keyword=' OR 1=1 --'. Bản V1 ghép chuỗi thô, trả về 200 OK dump toàn bộ CSDL hoặc lộ mã lỗi 500.</div>
-            <div class="kb-endpoint">GET /api/orders/search?keyword=...</div>
-          </div>
-          <div>
-            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB4()">
-              Thử nghiệm KB4
-            </button>
-            <div id="kb4Result" class="kb-result"></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="runAllSummary" style="display: none; margin-top: 14px;"></div>
-    </div>
-
-    <!-- HÀNG 2: 1-CLICK KB5–KB8 EXTENDED VULNERABILITY SIMULATOR -->
-    <div class="card" style="margin-bottom: 24px; border-color: rgba(239, 68, 68, 0.3);">
-      <div class="card-header">
-        <div>
-          <div class="card-title" style="color: #f87171;">
-            ⚡ Kịch Bản Điểm Yếu Mở Rộng KB5–KB8 (Token Replay, Business Logic Flaw, Insecure File Upload, No Rate Limit)
-          </div>
-          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
-            Mô phỏng các nguy cơ an ninh mở rộng trên V1: Không thu hồi token sau logout, Cho phép số tiền âm & Mass Assignment, Upload Webshell thành công và Không giới hạn tần suất gọi API.
-          </div>
-        </div>
-        <button id="btnRunAllExtKB" class="btn btn-secondary" style="border-color: #ef4444; color: #f87171;" onclick="runAllExtKB()">
-          ▶ Chạy tất cả kịch bản mở rộng (KB5–KB8)
-        </button>
-      </div>
-
-      <div class="grid-4">
-        <!-- CARD KB5 -->
-        <div class="kb-card">
-          <div>
-            <div class="kb-header">
-              <span class="kb-tag">KB5 (TOKEN REPLAY)</span>
-              <span class="badge badge-orange">Kết quả: 200 OK</span>
-            </div>
-            <div class="kb-title">Không Thu Hồi Token (Replay)</div>
-            <div class="kb-desc">Đăng xuất (POST /api/auth/logout), sau đó dùng lại token cũ gọi /api/auth/me. V1 không có Blacklist nên token cũ vẫn hợp lệ (200 OK).</div>
-            <div class="kb-endpoint">POST /logout -> GET /me</div>
-          </div>
-          <div>
-            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB5()">
-              Thử Token Replay (KB5)
-            </button>
-            <div id="kb5Result" class="kb-result"></div>
-          </div>
-        </div>
-
-        <!-- CARD KB6 -->
-        <div class="kb-card">
-          <div>
-            <div class="kb-header">
-              <span class="kb-tag">KB6 (LOGIC & IDOR)</span>
-              <span class="badge badge-orange">Kết quả: 200 OK</span>
-            </div>
-            <div class="kb-title">Logic Nghiệp Vụ & IDOR Sửa/Xóa</div>
-            <div class="kb-desc">Tạo đơn tiền âm (-999k) hoặc userA xóa đơn #3 của userB. V1 chấp nhận số tiền âm (200 OK) và cho phép xóa đơn của người khác.</div>
-            <div class="kb-endpoint">POST /orders | DELETE /orders/3</div>
-          </div>
-          <div>
-            <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-              <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="runKB6Logic()">
-                Tiền âm (-999k)
-              </button>
-              <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="runKB6IdorDelete()">
-                Xóa đơn #3
-              </button>
-            </div>
-            <div id="kb6Result" class="kb-result"></div>
-          </div>
-        </div>
-
-        <!-- CARD KB7 -->
-        <div class="kb-card">
-          <div>
-            <div class="kb-header">
-              <span class="kb-tag">KB7 (FILE UPLOAD)</span>
-              <span class="badge badge-orange">Kết quả: 200 OK</span>
-            </div>
-            <div class="kb-title">Upload Webshell / Extension Lạ</div>
-            <div class="kb-desc">Gửi file 'webshell.jpg.aspx' hoặc script text. V1 không kiểm tra Magic Bytes, chấp nhận tải lên (200 OK), nguy cơ RCE.</div>
-            <div class="kb-endpoint">POST /api/orders/1/upload</div>
-          </div>
-          <div>
-            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB7()">
-              Thử Upload Webshell Giả
-            </button>
-            <div id="kb7Result" class="kb-result"></div>
-          </div>
-        </div>
-
-        <!-- CARD KB8 -->
-        <div class="kb-card">
-          <div>
-            <div class="kb-header">
-              <span class="kb-tag">KB8 (NO RATE LIMIT)</span>
-              <span class="badge badge-orange">Kết quả: 200 OK</span>
-            </div>
-            <div class="kb-title">Không Giới Hạn Tần Suất (Spam)</div>
-            <div class="kb-desc">Spam liên tục 8 requests vào /api/orders/rate-test. V1 không có Rate Limiting, xử lý toàn bộ 8 request thành công (200 OK).</div>
-            <div class="kb-endpoint">GET /api/orders/rate-test (Spam)</div>
-          </div>
-          <div>
-            <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="runKB8()">
-              Thử Spam API (Test Spam)
-            </button>
-            <div id="kb8Result" class="kb-result"></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="runAllExtSummary" style="display: none; margin-top: 14px;"></div>
-    </div>
-
     <!-- KHU VỰC A: TRUNG TÂM ĐĂNG NHẬP 1-CLICK & GIẢI MÃ JWT TOKEN -->
     <div class="grid-2">
-      <!-- CỘT 1: FORM LOGIN & QUICK ACCOUNTS -->
+      <!-- CỘT 1: THÔNG TIN PHIÊN LÀM VIỆC & PHÂN QUYỀN -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">🔐 Trung Tâm Xác Thực (1-Click Quick Login & Logout)</div>
-          <span class="badge badge-blue">POST /api/auth/login</span>
+          <div class="card-title">👤 Phiên Làm Việc & Phân Quyền Hiện Tại</div>
+          <button class="btn btn-secondary btn-sm" onclick="handleNavLogout()">🚪 Đăng xuất</button>
+        </div>
+
+        <!-- SESSION STATUS -->
+        <div class="session-box" style="margin-bottom: 14px;">
+          <div class="session-user">
+            <div id="userAvatar" class="user-avatar">?</div>
+            <div>
+              <div id="userDisplayName" style="font-weight: 700; font-size: 0.95rem;">Chưa đăng nhập (Anonymous)</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">Trạng thái phiên làm việc hiện tại</div>
+            </div>
+          </div>
+          <span id="userRoleBadge" class="badge badge-orange">No Token</span>
         </div>
 
         <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">
-          Chọn nhanh tài khoản thử nghiệm (Tự động điền mật khẩu và cấp Token):
+          Chuyển nhanh phiên người dùng khác (Quick Switch):
         </div>
 
         <div class="quick-accounts-grid">
@@ -301,29 +206,6 @@
             <div class="quick-acc-name">👑 admin (Quản Trị)</div>
             <div class="quick-acc-role">Toàn quyền (Admin)</div>
           </div>
-        </div>
-
-        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-          <input type="text" id="loginUsername" class="form-input" placeholder="Tên đăng nhập (username)">
-          <input type="password" id="loginPassword" class="form-input" placeholder="Mật khẩu (password)">
-          <button id="btnLogin" class="btn btn-primary" style="white-space: nowrap;" onclick="performLogin(document.getElementById('loginUsername').value, document.getElementById('loginPassword').value)">
-            Đăng nhập
-          </button>
-          <button id="btnLogout" class="btn btn-secondary" style="white-space: nowrap;" onclick="performLogout()">
-            Đăng xuất
-          </button>
-        </div>
-
-        <!-- SESSION STATUS -->
-        <div class="session-box">
-          <div class="session-user">
-            <div id="userAvatar" class="user-avatar">?</div>
-            <div>
-              <div id="userDisplayName" style="font-weight: 700; font-size: 0.9rem;">Chưa đăng nhập (Anonymous)</div>
-              <div style="font-size: 0.72rem; color: var(--text-dim);">Trạng thái phiên làm việc hiện tại</div>
-            </div>
-          </div>
-          <span id="userRoleBadge" class="badge badge-orange">No Token</span>
         </div>
       </div>
 
@@ -671,8 +553,8 @@
     <!-- FOOTER -->
     <footer class="footer">
       <div>
-        <strong>ĐỒ ÁN CHUYÊN NGÀNH AN TOÀN THÔNG TIN - HUTECH</strong><br>
-        Sinh viên thực hiện: <strong>Võ Lê Nhật Hoàng</strong> (MSSV: <strong>2387700017</strong> - Lớp: <strong>23DATA1</strong>)
+        <strong>HỆ THỐNG THỰC NGHIỆM AN TOÀN THÔNG TIN WEB/API</strong><br>
+        Nghiên cứu &amp; Thực nghiệm Các Cơ chế Xác thực, Phân quyền và Kiểm soát Truy cập
       </div>
       <div>
         Đang chạy: <strong style="color: #f87171;">WebApi.V1_Vulnerable (Port 5001)</strong> |

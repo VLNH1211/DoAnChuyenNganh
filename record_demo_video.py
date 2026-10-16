@@ -15,6 +15,7 @@ def record_demo():
     print(" Sinh viên: Võ Lê Nhật Hoàng - MSSV: 2387700017 - Lớp: 23DATA1")
     print(" Đề tài: BẢO MẬT ỨNG DỤNG WEB/API TRÊN NỀN TẢNG ASP.NET CORE (HUTECH)")
     print("==========================================================================")
+    start_time = time.time()
 
     with sync_playwright() as p:
         # Launch Google Chrome with 1920x1080 viewport and video recording
@@ -182,17 +183,34 @@ def record_demo():
         video_handle = page.video
         context.close()
         browser.close()
+        time.sleep(1.5)
 
         # Đổi tên file video vừa ghi
         if video_handle:
             saved_path = video_handle.path()
             if os.path.exists(FINAL_VIDEO_NAME):
-                os.remove(FINAL_VIDEO_NAME)
-            os.rename(saved_path, FINAL_VIDEO_NAME)
+                try:
+                    os.remove(FINAL_VIDEO_NAME)
+                except Exception:
+                    pass
+            for _ in range(5):
+                try:
+                    os.rename(saved_path, FINAL_VIDEO_NAME)
+                    break
+                except Exception:
+                    time.sleep(1)
+
+            elapsed_sec = int(time.time() - start_time)
+            mins = elapsed_sec // 60
+            secs = elapsed_sec % 60
+            file_size = os.path.getsize(FINAL_VIDEO_NAME)
+            size_mb = file_size / (1024 * 1024)
+
             print(f"\n==========================================================================")
             print(f" THÀNH CÔNG! VIDEO DEMO ĐÃ ĐƯỢC LƯU TẠI:")
-            print(f" {FINAL_VIDEO_NAME}")
-            print(f" Kích thước: {os.path.getsize(FINAL_VIDEO_NAME):,} bytes")
+            print(f" Đường dẫn: {FINAL_VIDEO_NAME}")
+            print(f" Dung lượng: {size_mb:.2f} MB ({file_size:,} bytes)")
+            print(f" Thời lượng: {mins:02d}:{secs:02d} ({elapsed_sec} giây)")
             print(f" Độ phân giải: Full HD 1920x1080 (Chuẩn trình chiếu Hội đồng)")
             print(f"==========================================================================")
 

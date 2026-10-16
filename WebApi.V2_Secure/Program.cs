@@ -142,15 +142,9 @@ builder.Services.AddSwaggerGen(c =>
         Title = "SecurityLab API - V2_Secure (HUTECH ATTT)",
         Version = "v2",
         Description = "Hệ thống Thực nghiệm An toàn thông tin - Phiên bản V2 (Bảo mật: Đầy đủ 4 lớp kiểm soát KB1–KB4 + Audit Log)\n\n" +
-                      "Sinh viên thực hiện: Võ Lê Nhật Hoàng (MSSV: 2387700017 - Lớp: 23DATA1)\n" +
                       "Đề tài: XÂY DỰNG VÀ KIỂM THỬ CÁC CƠ CHẾ BẢO MẬT CHO ỨNG DỤNG WEB/API DỰA TRÊN XÁC THỰC, PHÂN QUYỀN VÀ KIỂM SOÁT TRUY CẬP\n\n" +
                       "Cổng chạy: http://localhost:5002\n\n" +
-                      "Hướng dẫn: Đăng nhập tại `POST /api/auth/login` lấy token, sau đó bấm nút 'Authorize' phía trên bên phải và dán: `Bearer <token>`.",
-        Contact = new OpenApiContact
-        {
-            Name = "Võ Lê Nhật Hoàng",
-            Email = "2387700017@student.hutech.edu.vn"
-        }
+                      "Hướng dẫn: Đăng nhập tại `POST /api/auth/login` lấy token, sau đó bấm nút 'Authorize' phía trên bên phải và dán: `Bearer <token>`."
     });
 
     // Cấu hình nút Authorize cho Swagger

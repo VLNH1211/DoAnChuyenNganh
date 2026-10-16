@@ -511,7 +511,7 @@ namespace WebApi.V2_Secure.Controllers
         /// Chỉ cho phép .jpg, .png, .pdf; Bắt buộc kiểm tra chữ ký byte thực tế đầu tệp.
         /// </summary>
         [HttpPost("{id}/upload")]
-        public async Task<IActionResult> UploadAttachment(int id, [FromForm] IFormFile? file)
+        public async Task<IActionResult> UploadAttachment(int id, IFormFile? file)
         {
             var (userId, username, role) = GetCurrentUserInfo();
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";

@@ -27,8 +27,19 @@ if (-not $v2Running) {
     Write-Host "[2/3] Web V2 đang chạy sẵn sàng tại http://localhost:5002." -ForegroundColor Green
 }
 
-Write-Host "Đang chờ 5 giây để 2 server khởi tạo CSDL và ổn định kết nối..." -ForegroundColor Cyan
-Start-Sleep -Seconds 5
+Write-Host "Đang kiểm tra và đợi 2 server sẵn sàng kết nối..." -ForegroundColor Cyan
+$timeoutSec = 35
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+while ($sw.Elapsed.TotalSeconds -lt $timeoutSec) {
+    $v1 = Get-NetTCPConnection -LocalPort 5001 -State Listen -ErrorAction SilentlyContinue
+    $v2 = Get-NetTCPConnection -LocalPort 5002 -State Listen -ErrorAction SilentlyContinue
+    if ($v1 -and $v2) {
+        Write-Host "Cả 2 server V1 (5001) và V2 (5002) đã sẵn sàng!" -ForegroundColor Green
+        break
+    }
+    Start-Sleep -Milliseconds 800
+}
+Start-Sleep -Seconds 2
 
 # 3. Kích hoạt Playwright thực hiện Demo và quay video
 Write-Host "[3/3] Đang thực thi kịch bản Demo và quay Video Full HD 1920x1080..." -ForegroundColor Cyan
