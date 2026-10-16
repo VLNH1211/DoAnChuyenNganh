@@ -1,9 +1,9 @@
 # WebApi.V2_Secure — Phiên Bản Phòng Thủ Chuyên Sâu (Blue Team)
 
-> **Dự án thành phần thuộc Đồ án Chuyên ngành An toàn thông tin (HUTECH)**  
-> **Sinh viên:** Võ Lê Nhật Hoàng | **MSSV:** 2387700017 | **Lớp:** 23DATA1  
+> **Dự án thành phần thuộc Đồ án Chuyên ngành An toàn thông tin**  
 > **Nền tảng:** C# ASP.NET Core 8.0 LTS Web API | **Cổng dịch vụ:** `http://localhost:5002`  
-> **Cơ sở dữ liệu:** SQL Server LocalDB (`SecurityLab_V2`)
+> **Cơ sở dữ liệu:** SQL Server LocalDB (`SecurityLab_V2`)  
+> **Swagger UI (kèm Authorize JWT):** [http://localhost:5002/swagger](http://localhost:5002/swagger)
 
 ---
 
@@ -20,12 +20,25 @@ Dự án chứng minh năng lực phòng thủ đa lớp (**Defense-in-Depth**) 
 
 ---
 
-## 2. GIAO DIỆN CYBER DASHBOARD & BLUE TEAM DEFENSE SIMULATOR (V2)
+## 2. KIẾN TRÚC GIAO DIỆN 2 TẦNG (TWO-VIEW ARCHITECTURE)
 
-Ứng dụng tích hợp sẵn giao diện web Cyber Security Dashboard tại `http://localhost:5002` với tông màu **Xanh Lục Bảo Mật (Cyber Green)**:
+Ứng dụng tích hợp sẵn giao diện web tại `http://localhost:5002` với tông màu **Xanh Lục Bảo Mật (Cyber Green)** gồm 2 tầng giao diện độc lập:
+
+### 2.1 Cổng Xác Thực Tập Trung (Login Portal)
+* Phân tách màn hình đăng nhập độc lập trước khi vào hệ thống.
+* Tích hợp chức năng chọn nhanh tài khoản mẫu đại diện cho các vai trò (`userA`, `userB`, `staff1`, `admin`) hoặc vào chế độ nặc danh để kiểm chứng phản hồi chặn `401 Unauthorized`.
+
+![Cổng Đăng Nhập Bản V2](../screenshots/00b_V2_Login_Portal.png)
+*Hình 1: Cổng xác thực kính mờ của Bản V2 với phong cách phòng thủ kiên cố.*
+
+---
+
+### 2.2 Bảng Điều Khiển Bảo Mật Đa Lớp (Dashboard)
+* Sau khi đăng nhập thành công, hệ thống chuyển sang màn hình Dashboard.
+* Bảng điều khiển gồm: Thông tin phiên người dùng, bộ giải mã JWT Claims thời gian thực, bảng kiểm tra 5 OWASP HTTP Security Headers và bảng **Nhật Ký An Ninh & Kiểm Toán (Audit Logs)** theo dõi mọi hành vi vi phạm an ninh (`401`, `403`, `400`, `415`, `429`).
 
 ![Giao diện Bảng điều khiển Bản V2](../screenshots/02_V2_Dashboard_Overview.png)
-*Hình 1: Giao diện tổng quan Web V2 tại cổng 5002 với tông xanh an toàn, tích hợp bộ giải mã Claims JWT, 2 hàng kịch bản phòng thủ và hệ thống Security Audit Logs.*
+*Hình 2: Giao diện tổng quan Web V2 tại cổng 5002 với tông xanh bảo mật và hệ thống kiểm soát an ninh đa tầng.*
 
 ---
 
@@ -68,16 +81,16 @@ Dự án áp dụng 100% các công nghệ và cơ chế gốc của nền tản
                │    5. ASP.NET Core Controllers & Action Filters  │
                │    - [Authorize] & [Authorize(Roles = "...")]    │
                │    - Object-Level Check (User.Claims.UserId)     │
-               │    - Input Regex Validation & DTO Model Binding  │
-               │    - RateLimitingService (Sliding Window 429)    │
+               │    - Parameterized LINQ (Chống SQL Injection)    │
+               │    - Magic Bytes File Validation (Chống Webshell)│
+               │    - IRateLimitingService (Chống Brute-Force)    │
                └────────────────────────┬─────────────────────────┘
                                         │
                                         ▼
                ┌──────────────────────────────────────────────────┐
-               │    6. Entity Framework Core 8.0 (ORM)            │
-               │    - LINQ Parameterized Queries (Chống SQLi)     │
-               │    - Phân tách phạm vi dữ liệu (Data Isolation)  │
-               │    - Ghi nhận sự kiện vào CSDL SecurityLab_V2    │
+               │    6. SQL Server LocalDB (SecurityLab_V2)        │
+               │    - Mật khẩu băm BCrypt an toàn                 │
+               │    - Bảng AuditLogs ghi vết an ninh thời gian thực│
                └──────────────────────────────────────────────────┘
 ```
 
@@ -85,62 +98,20 @@ Dự án áp dụng 100% các công nghệ và cơ chế gốc của nền tản
 
 ## 4. CHI TIẾT 8 CƠ CHẾ PHÒNG THỦ THỰC NGHIỆM ĐỐI CHỨNG (KB1 – KB8)
 
-### 4.1 Bốn kịch bản bảo mật cốt lõi (Khớp 100% Đề cương đã nộp)
-
-| Kịch bản | Tên kịch bản & Endpoint | Cơ chế phòng thủ ASP.NET Core | Mã chặn | Minh chứng hình ảnh |
-| :---: | :--- | :--- | :---: | :---: |
-| **KB1** | **Kiểm soát Xác thực**<br>`GET /api/orders` | Khai báo `[Authorize]` trên `OrdersController`. Cấu hình `JwtBearerEvents.OnChallenge` chặn đứng nặc danh, trả về mã `401 Unauthorized` chuẩn và ghi Audit Log. | **401** | ![KB1 After](../screenshots/04_KB1_After_V2_Unauthorized_401.png) |
-| **KB1 (Hợp lệ)** | **Xác thực JWT thành công**<br>`POST /api/auth/login` | Cấp JWT Token có `JTI`, giải mã Claims (`sub`, `role`, `userId`). Phân tách phạm vi dữ liệu (Data Isolation): `userA` chỉ thấy đúng 3 đơn của mình. | **200** | ![KB1 UserA](../screenshots/05_KB1_After_V2_ValidToken_UserA_200.png) |
-| **KB2** | **Phân quyền vai trò (RBAC)**<br>`GET /api/admin/users` | Khai báo `[Authorize(Policy = "AdminOnly")]`. Khi `userA` (vai trò `NguoiDung`) truy cập, ASP.NET Core Authorization Engine chặn với `403 Forbidden`. | **403** | ![KB2 Blocked](../screenshots/07_KB2_After_V2_RBAC_Blocked_403.png) |
-| **KB2 (Admin)** | **Quản trị viên truy cập**<br>`GET /api/admin/users` | Admin truy cập hợp lệ (`200 OK`). Mật khẩu trong CSDL được băm bằng thuật toán **BCrypt** an toàn (`BCrypt.Net-Next`) và ẩn hoàn toàn khỏi phản hồi API. | **200** | ![KB2 Admin](../screenshots/08_KB2_After_V2_Admin_Access_200.png) |
-| **KB3** | **Chống BOLA / IDOR**<br>`GET /api/orders/{id}` | Trích xuất `UserId` từ `User.Claims` trong ASP.NET Core Action, đối chiếu với `order.UserId`. Nếu `userA` xem đơn `#3` của `userB`, lập tức chặn `403 Forbidden`. | **403** | ![KB3 Blocked](../screenshots/10_KB3_After_V2_IDOR_Blocked_403.png) |
-| **KB4** | **Chống SQL Injection**<br>`GET /api/orders/search` | Kết hợp **Regex Input Validation** lọc mẫu tấn công độc hại (`' OR 1=1 --`) chặn với mã `400 Bad Request` + chuyển đổi 100% sang **EF Core Parameterized LINQ**. | **400** | ![KB4 Blocked](../screenshots/12_KB4_After_V2_SQLi_Blocked_400.png) |
-
----
-
-### 4.2 Bốn kịch bản phòng thủ chiều sâu mở rộng (Defense-in-Depth)
-
-| Kịch bản | Tên kịch bản & Endpoint | Cơ chế phòng thủ ASP.NET Core | Mã chặn |
+| Kịch bản | Tên cơ chế | Giải pháp trên ASP.NET Core 8.0 | Kết quả thực nghiệm |
 | :---: | :--- | :--- | :---: |
-| **KB5** | **Thu hồi Token khi Đăng xuất (Token Revocation)**<br>`POST /api/auth/logout` -> `GET /api/auth/me` | Khi Logout, `TokenBlacklistService` (In-Memory Singleton) lưu `JTI` của token kèm thời hạn tự hủy. `SecurityAuditMiddleware` kiểm tra `JTI` và từ chối mọi token bị thu hồi. | **401**<br>*(TokenRevoked)* |
-| **KB6** | **Chống Lỗi Nghiệp Vụ, Mass Assignment & IDOR Xóa**<br>`POST /api/orders` \| `DELETE /api/orders/{id}` | - Bắt buộc `TotalAmount > 0` (chặn số tiền âm `-999,999đ` với mã `400`).<br>- Tự động gán `newOrder.UserId = Claims.UserId` (chống client tự gán `UserId` của người khác).<br>- Kiểm tra quyền sở hữu đơn hàng khi Xóa (chặn `403` nếu xóa đơn người khác). | **400 / 403** |
-| **KB7** | **Bảo vệ Upload tệp & Nhận diện Magic Bytes**<br>`POST /api/orders/{id}/upload` | - Chống Path Traversal (`..`, `/`, `\`) và Double Extension (`.aspx`, `.php`, `.exe`).<br>- Đọc byte đầu luồng stream (`file.OpenReadStream()`): kiểm tra chữ ký byte thực tế (**JPEG: `FF D8 FF`**, **PNG: `89 50 4E 47`**, **PDF: `%PDF`**). Từ chối tệp ngụy trang với mã `400/415`. | **400 / 415** |
-| **KB8** | **Chống Brute-Force & Rate Limiting Spam API**<br>`POST /api/auth/login` \| `GET /api/orders/rate-test` | Triển khai `RateLimitingService` theo thuật toán Sliding Window:<br>- Khóa tạm thời tài khoản/IP nếu đăng nhập sai quá 5 lần.<br>- Giới hạn tối đa 5 yêu cầu / 5 giây trên API. Vượt ngưỡng trả về **`429 Too Many Requests`** kèm Header `Retry-After: 5`. | **429** |
+| **KB1** | **Xác thực JWT Bearer** | `[Authorize]` trên Controller + `JwtBearerHandler` kiểm tra chữ ký HMAC-SHA256. | Truy cập không Token bị chặn ngay với mã **`401 Unauthorized`**. |
+| **KB2** | **Phân quyền RBAC Policy** | `[Authorize(Policy = "AdminOnly")]` + `ClaimsPrincipal.IsInRole("Admin")`. | `userA` gọi API Admin bị chặn ngay với mã **`403 Forbidden`**. |
+| **KB3** | **Kiểm soát Đối tượng (IDOR)** | Trích xuất `ClaimTypes.NameIdentifier` và đối chiếu `order.UserId == currentUserId`. | `userA` xem đơn của `userB` bị chặn ngay với mã **`403 Forbidden`**. |
+| **KB4** | **Chống SQL Injection** | Regex Validation chặn ký tự cấm + Entity Framework Core Parameterized Queries. | Chuỗi `' OR 1=1 --` bị phát hiện và chặn với mã **`400 Bad Request`**. |
+| **KB5** | **Thu hồi Token (JTI Blacklist)** | Singleton `ITokenBlacklistService` lưu `jti` khi Logout, Middleware kiểm tra từng request. | Token cũ sau khi Logout bị chặn với mã **`401 Unauthorized`**. |
+| **KB6** | **Toàn vẹn Nghiệp vụ & Anti-Mass Assignment** | DTO Validation (`TotalAmount > 0`) + gán `UserId` tự động từ Claims, kiểm tra sở hữu khi Xóa. | Đơn tiền âm bị chặn với mã **`400 Bad Request`**; Xóa trái phép bị chặn **`403`**. |
+| **KB7** | **Kiểm tra Magic Bytes File Upload** | Đọc byte header thực tế (`FF D8 FF`, `89 50 4E 47`, `%PDF`) + chuẩn hóa tên file GUID. | File webshell giả mạo bị từ chối với mã **`415 Unsupported Media Type`**. |
+| **KB8** | **Rate Limiting & Chống Spam** | Singleton `IRateLimitingService` áp dụng Sliding Window (5 req/5s/IP). | Spam quá tần suất bị chặn với mã **`429 Too Many Requests`**. |
 
 ---
 
-### 4.3 Minh chứng kiểm tra liên hoàn toàn bộ cơ chế phòng thủ trên Bản V2
-
-![Run All Kịch bản cốt lõi V2](../screenshots/13b_V2_RunAll.png)
-*Hình 2: Chạy liên hoàn 4 kịch bản cốt lõi KB1–KB4 trên Bản V2 — Toàn bộ 4 kịch bản chuyển màu XANH AN TOÀN (401, 403, 403, 400).*
-
-![Run All Kịch bản mở rộng V2](../screenshots/15b_V2_RunAll_Extended_KB5_KB8.png)
-*Hình 3: Chạy liên hoàn 4 kịch bản mở rộng KB5–KB8 trên Bản V2 — Toàn bộ 4 cuộc tấn công đều bị chặn đứng an toàn.*
-
----
-
-## 5. HTTP SECURITY HEADERS CHUẨN OWASP & NHẬT KÝ KIỂM TOÁN (AUDIT LOGS)
-
-### 5.1 Cấu hình 5 OWASP HTTP Security Headers
-Được gắn tự động vào mọi phản hồi HTTP thông qua `SecurityAuditMiddleware`:
-1. `X-Content-Type-Options: nosniff` (Chống MIME confusion / sniffing)
-2. `X-Frame-Options: DENY` (Chống Clickjacking)
-3. `X-XSS-Protection: 1; mode=block` (Bộ lọc XSS trình duyệt)
-4. `Referrer-Policy: strict-origin-when-cross-origin` (Bảo vệ địa chỉ nguồn)
-5. `Content-Security-Policy: default-src 'self' 'unsafe-inline' data:;` (Chặn nạp mã độc từ bên thứ ba)
-
-![OWASP Security Headers Live Check](../screenshots/16_V2_OWASP_Security_Headers_LiveCheck.png)
-*Hình 4: Kiểm tra trực tiếp bộ 5 OWASP HTTP Security Headers trên Bản V2 đạt chuẩn OWASP ZAP.*
-
-### 5.2 Hệ thống Nhật ký Kiểm toán An ninh (Security Audit Logs)
-`SecurityAuditMiddleware` tự động chặn và ghi nhận toàn bộ các sự kiện vi phạm an ninh (`401`, `403`, `400`, `415`, `429`) vào bảng CSDL `AuditLogs`:
-
-![Security Audit Logs Table](../screenshots/14_V2_Security_Audit_Logs_Table.png)
-*Hình 5: Bảng nhật ký kiểm toán an ninh trên Bản V2 hiển thị đầy đủ vết tấn công phục vụ điều tra số (Digital Forensics).*
-
----
-
-## 6. HƯỚNG DẪN KHỞI ĐỘNG & KIỂM THỬ BẢN V2
+## 5. HƯỚNG DẪN KHỞI ĐỘNG & KIỂM THỬ BẢN V2
 
 ### Khởi động độc lập
 Tại thư mục gốc `ĐACN`, mở terminal PowerShell và chạy:
@@ -148,12 +119,5 @@ Tại thư mục gốc `ĐACN`, mở terminal PowerShell và chạy:
 dotnet run --project WebApi.V2_Secure/WebApi.V2_Secure.csproj --urls=http://localhost:5002
 ```
 
-### Chạy kiểm thử tự động 17 tiêu chí bằng script PowerShell
-```powershell
-powershell -ExecutionPolicy Bypass -File .\test_api.ps1
-```
-*Kết quả xác nhận PASS 17/17 tiêu chí kiểm thử an toàn.*
-
-### Các đường dẫn kiểm thử
-- **Giao diện Dashboard V2:** `http://localhost:5002`
-- **Swagger UI (kèm Authorize Bearer JWT):** `http://localhost:5002/swagger`
+* **Giao diện Web:** Mở trình duyệt truy cập: [http://localhost:5002](http://localhost:5002)
+* **Swagger UI:** Mở trình duyệt truy cập: [http://localhost:5002/swagger](http://localhost:5002/swagger)
