@@ -1,6 +1,0 @@
-{
-  "python.defaultInterpreterPath": "C:\\Users\\volen\\AppData\\Local\\Python\\bin\\python.exe",
-  "python.analysis.extraPaths": [
-    "C:\\Users\\volen\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages"
-  ]
-}

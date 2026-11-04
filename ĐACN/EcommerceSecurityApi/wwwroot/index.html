@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechSec Gear - Siêu Thị Thiết Bị Công Nghệ & Gaming Gear Chính Hãng</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyberDark: '#0b0f19',
+                        cyberCard: '#111827',
+                        cyberBorder: '#1f2937',
+                        techCyan: '#06b6d4',
+                        techBlue: '#2563eb',
+                        techIndigo: '#4f46e5'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f19; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .glass-card {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card:hover {
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0b0f19; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #374151; }
+        .product-img {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .group:hover .product-img {
+            transform: scale(1.06);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            
+            <!-- Logo & Brand -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchNavTab('shop')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-microchip text-white text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl font-extrabold bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">TechSec</span>
+                        <span class="text-xl font-extrabold text-white tracking-wider">GEAR</span>
+                    </div>
+                    <span class="text-[10px] text-cyan-400/80 font-mono tracking-widest block -mt-0.5">HIGH-END TECH STORE</span>
+                </div>
+            </div>
+
+            <!-- Nav Tabs (Clean E-Commerce Style) -->
+            <nav class="hidden md:flex items-center space-x-1 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800">
+                <button id="navTabShop" onclick="switchNavTab('shop')" class="px-5 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-cyan-600 text-black shadow-sm">
+                    <i class="fa-solid fa-laptop-code"></i>
+                    <span>Sản phẩm</span>
+                </button>
+                <button id="navTabOrders" onclick="switchNavTab('orders')" class="px-5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-2">
+                    <i class="fa-solid fa-box-open"></i>
+                    <span>Đơn hàng của tôi</span>
+                </button>
+                <!-- Admin Only: SOC Center -->
+                <button id="navTabSoc" onclick="switchNavTab('soc')" class="hidden px-5 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-shield-halved text-rose-400"></i>
+                    <span>Giám sát An ninh (SOC)</span>
+                </button>
+                <button id="navTabAuth" onclick="switchNavTab('auth')" class="px-5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-2">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Tài khoản</span>
+                </button>
+            </nav>
+
+            <!-- Actions: Cart & Profile -->
+            <div class="flex items-center space-x-3">
+                <!-- Cart Button -->
+                <button onclick="toggleCartDrawer(true)" class="relative p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 transition">
+                    <i class="fa-solid fa-cart-shopping text-base"></i>
+                    <span id="cartBadge" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-cyan-500 text-black text-[11px] font-extrabold flex items-center justify-center shadow">0</span>
+                </button>
+
+                <!-- User Profile Badge -->
+                <div id="headerUserArea" class="flex items-center space-x-2">
+                    <button onclick="switchNavTab('auth')" id="btnLoginPrompt" class="text-xs font-bold px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white transition flex items-center space-x-1.5 shadow-lg shadow-cyan-600/20">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                        <span>Đăng nhập</span>
+                    </button>
+                    <div id="headerUserProfile" class="hidden items-center space-x-2.5 bg-slate-900/90 border border-slate-800 py-1.5 px-3 rounded-xl">
+                        <div class="w-7 h-7 rounded-lg bg-cyan-600 flex items-center justify-center text-xs font-extrabold text-white" id="headerUserAvatar">
+                            U
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <span id="headerUsername" class="text-xs font-bold text-white block leading-tight">Username</span>
+                            <span id="headerUserRole" class="text-[10px] font-mono text-cyan-400 block leading-tight">Role</span>
+                        </div>
+                        <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-400 ml-2 text-xs" title="Đăng xuất">
+                            <i class="fa-solid fa-power-off"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Nav Sub-Bar -->
+        <div class="md:hidden flex items-center justify-around border-t border-slate-900 bg-slate-950 px-2 py-2 text-xs">
+            <button onclick="switchNavTab('shop')" class="py-1 px-3 font-bold text-cyan-400">Sản phẩm</button>
+            <button onclick="switchNavTab('orders')" class="py-1 px-3 text-slate-400">Đơn hàng</button>
+            <button onclick="switchNavTab('auth')" class="py-1 px-3 text-slate-400">Tài khoản</button>
+        </div>
+    </header>
+
+    <!-- Main Content Workspace (Full Width Clean Layout) -->
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 space-y-8">
+
+        <!-- ================= VIEW 1: TECH PRODUCTS SHOP (FULL WIDTH) ================= -->
+        <section id="viewShop" class="space-y-8">
+            <!-- Hero Banner -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/40 border border-slate-800 p-8 sm:p-12 shadow-2xl">
+                <div class="relative z-10 max-w-3xl">
+                    <span class="px-3.5 py-1 rounded-full text-xs font-extrabold bg-cyan-950 text-cyan-300 border border-cyan-800/80 mb-4 inline-block">
+                        <i class="fa-solid fa-certificate mr-1.5 text-cyan-400"></i>Hàng Chính Hãng 100% • Bảo Hành 1 Đổi 1 Trong 30 Ngày
+                    </span>
+                    <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+                        Siêu Thị Thiết Bị Công Nghệ & Gaming Gear Hàng Đầu
+                    </h1>
+                    <p class="text-sm sm:text-base text-slate-300 mt-3 leading-relaxed">
+                        Cung cấp hệ sinh thái Laptop đồ họa cao cấp, Smartphone Flagship, Tai nghe audiophile chống ồn chủ động và Gaming Gear eSports đỉnh cao. Miễn phí giao hàng hỏa tốc toàn quốc.
+                    </p>
+                    <div class="mt-6 flex flex-wrap items-center gap-3">
+                        <button onclick="document.getElementById('catalogAnchor').scrollIntoView({ behavior: 'smooth' })" class="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold text-xs transition flex items-center space-x-2 shadow-lg shadow-cyan-500/20">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                            <span>Xem ngay danh mục</span>
+                        </button>
+                        <!-- Admin / Staff Action Button: Hidden for regular visitors -->
+                        <button id="btnOpenAddProduct" onclick="openAddProductModal()" class="hidden px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition flex items-center space-x-2">
+                            <i class="fa-solid fa-plus text-cyan-400"></i>
+                            <span>Thêm thiết bị mới (Admin/Staff)</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Decorative Glow -->
+                <div class="absolute -right-16 -bottom-16 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            </div>
+
+            <!-- Search, Sort & Category Filter Bar -->
+            <div id="catalogAnchor" class="glass-card rounded-2xl p-5 shadow-xl space-y-4">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-96">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="searchInput" oninput="debounceSearch()" placeholder="Tìm theo tên sản phẩm, thương hiệu (Apple, Sony, ASUS...)"
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 transition">
+                    </div>
+
+                    <!-- Sort Dropdown -->
+                    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                        <span class="text-xs text-slate-400 hidden sm:inline">Sắp xếp:</span>
+                        <select id="sortBySelect" onchange="fetchProducts()" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="newest">Mới nhất</option>
+                            <option value="price_asc">Giá tăng dần</option>
+                            <option value="price_desc">Giá giảm dần</option>
+                            <option value="name_asc">Tên A-Z</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Category Pills -->
+                <div class="flex items-center space-x-2 overflow-x-auto pb-1 custom-scrollbar" id="categoryPills">
+                    <button onclick="filterCategory(0)" id="catBtn-0" class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-cyan-600 text-black shadow-sm transition">
+                        Tất cả thiết bị
+                    </button>
+                </div>
+            </div>
+
+            <!-- Products Section Header -->
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                    <span>Danh sách thiết bị công nghệ</span>
+                    <span id="productCountBadge" class="text-xs font-mono font-normal px-2.5 py-0.5 rounded-full bg-slate-800 text-cyan-400">0 sản phẩm</span>
+                </h2>
+                <button onclick="fetchProducts()" class="text-xs text-slate-400 hover:text-cyan-400 flex items-center space-x-1 transition">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    <span>Làm mới danh sách</span>
+                </button>
+            </div>
+
+            <!-- Products Grid: 4 COLUMNS ON DESKTOP (Full-Width Real E-Commerce Store) -->
+            <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Products will be dynamically populated here -->
+            </div>
+        </section>
+
+        <!-- ================= VIEW 2: ORDERS MANAGEMENT ================= -->
+        <section id="viewOrders" class="space-y-6 hidden">
+            <!-- Admin Statistics Banner (Visible for Admin) -->
+            <div id="adminRevenueBox" class="glass-card rounded-2xl p-6 shadow-xl hidden">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <h4 class="text-sm font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-line text-cyan-400"></i>
+                        <span>Thống kê doanh thu & đơn hàng (Quản trị viên)</span>
+                    </h4>
+                    <span class="text-[11px] font-mono text-cyan-300 px-2.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800">Báo cáo nội bộ</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+                    <div class="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <span class="text-[11px] text-slate-400">Tổng doanh thu</span>
+                        <div id="statRevenue" class="text-xl font-black text-emerald-400 mt-1 font-mono">0 đ</div>
+                    </div>
+                    <div class="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <span class="text-[11px] text-slate-400">Tổng số đơn hàng</span>
+                        <div id="statOrders" class="text-xl font-black text-cyan-400 mt-1 font-mono">0</div>
+                    </div>
+                    <div class="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <span class="text-[11px] text-slate-400">Thiết bị đã bán</span>
+                        <div id="statProductsSold" class="text-xl font-black text-indigo-400 mt-1 font-mono">0</div>
+                    </div>
+                    <div class="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <span class="text-[11px] text-slate-400">Đơn chờ duyệt</span>
+                        <div id="statPending" class="text-xl font-black text-amber-400 mt-1 font-mono">0</div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Orders Table -->
+            <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-xl space-y-4">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div>
+                        <h3 id="ordersTableTitle" class="text-base font-bold text-white flex items-center space-x-2">
+                            <span>Lịch sử đơn hàng của bạn</span>
+                        </h3>
+                        <p id="ordersTableSubtitle" class="text-xs text-slate-400 mt-0.5">Theo dõi chi tiết các đơn đặt mua thiết bị công nghệ</p>
+                    </div>
+                    <button onclick="fetchOrders()" class="text-xs text-slate-400 hover:text-cyan-400 flex items-center space-x-1">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span>Tải lại</span>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-slate-400 uppercase font-mono bg-slate-900/90 border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-3">Mã đơn</th>
+                                <th class="py-3 px-3">Khách hàng</th>
+                                <th class="py-3 px-3">Thiết bị mua</th>
+                                <th class="py-3 px-3">Tổng tiền</th>
+                                <th class="py-3 px-3">Trạng thái</th>
+                                <th class="py-3 px-3 text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody" class="divide-y divide-slate-800 text-slate-200">
+                            <tr>
+                                <td colspan="6" class="py-8 text-center text-slate-500">
+                                    Đang tải danh sách đơn hàng...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: AUTHENTICATION & ACCOUNT ================= -->
+        <section id="viewAuth" class="space-y-6 hidden flex justify-center">
+            <div class="glass-card rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden max-w-lg w-full mx-auto">
+                <!-- Tabs: Login / Register -->
+                <div class="flex border-b border-slate-700 mb-6">
+                    <button id="tabLogin" onclick="switchAuthSubTab('login')" class="pb-3 px-4 font-bold text-sm text-cyan-400 border-b-2 border-cyan-500 flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                        <span>Đăng nhập</span>
+                    </button>
+                    <button id="tabRegister" onclick="switchAuthSubTab('register')" class="pb-3 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 flex items-center space-x-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Đăng ký khách hàng mới</span>
+                    </button>
+                </div>
+
+                <!-- Alert message -->
+                <div id="authAlert" class="hidden mb-6 p-4 rounded-xl text-xs border flex items-start space-x-3">
+                    <i id="authAlertIcon" class="fa-solid fa-circle-info text-sm mt-0.5"></i>
+                    <div id="authAlertText" class="flex-1"></div>
+                </div>
+
+                <!-- Form: LOGIN -->
+                <form id="formLogin" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Tên đăng nhập hoặc Email <span class="text-rose-400">*</span></label>
+                        <input type="text" id="loginUsername" required placeholder="Nhập tên đăng nhập hoặc email"
+                            class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Mật khẩu <span class="text-rose-400">*</span></label>
+                        <input type="password" id="loginPassword" required placeholder="Nhập mật khẩu"
+                            class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <button type="submit" id="btnLoginSubmit"
+                        class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 font-bold text-xs text-white shadow-lg shadow-cyan-600/30 transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span>Đăng nhập hệ thống</span>
+                    </button>
+                </form>
+
+                <!-- Form: REGISTER -->
+                <form id="formRegister" onsubmit="handleRegister(event)" class="space-y-3.5 hidden text-xs">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Tên đăng nhập <span class="text-rose-400">*</span></label>
+                        <input type="text" id="regUsername" required placeholder="Ví dụ: nguyenvana"
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Email <span class="text-rose-400">*</span></label>
+                        <input type="email" id="regEmail" required placeholder="nguyenvana@gmail.com"
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Họ và tên</label>
+                        <input type="text" id="regFullName" placeholder="Nguyễn Văn A"
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-300 mb-1">Mật khẩu <span class="text-rose-400">*</span></label>
+                            <input type="password" id="regPassword" required placeholder="Tối thiểu 6 ký tự"
+                                class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-300 mb-1">Xác nhận mật khẩu <span class="text-rose-400">*</span></label>
+                            <input type="password" id="regConfirmPassword" required placeholder="Nhập lại mật khẩu"
+                                class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <button type="submit" id="btnRegisterSubmit"
+                        class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-bold text-white transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Đăng ký tài khoản</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 4: SECURITY OPERATIONS CENTER (SOC) - ADMIN ONLY ================= -->
+        <section id="viewSoc" class="space-y-6 hidden">
+            <!-- Header Banner -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-rose-950/40 to-slate-900 border border-rose-900/40 p-8 shadow-2xl">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="space-y-1.5">
+                        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-extrabold">
+                            <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                            <span>HỆ THỐNG GIÁM SÁT AN NINH & NHẬT KÝ HOẠT ĐỘNG (SOC & AUDIT LOGS)</span>
+                        </div>
+                        <h2 class="text-2xl font-black text-white">Trung Tâm Giám Sát An Ninh & Nhật Ký Hệ Thống</h2>
+                        <p class="text-xs text-slate-400">Theo dõi vi phạm bảo mật, thời điểm đăng ký mới, lịch sử đăng nhập & Quản lý Khóa / Mở khóa tài khoản.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="fetchSocData()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition flex items-center space-x-2">
+                            <i class="fa-solid fa-rotate mr-1"></i>
+                            <span>Làm mới</span>
+                        </button>
+                        <button onclick="clearSecurityLogs()" class="px-4 py-2.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/80 font-bold text-xs transition flex items-center space-x-2">
+                            <i class="fa-solid fa-trash-can mr-1"></i>
+                            <span>Làm sạch nhật ký</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800">
+                        <div class="text-[11px] text-slate-400">Tổng sự cố an ninh</div>
+                        <div id="statTotalIncidents" class="text-2xl font-black text-white font-mono mt-1">0</div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-rose-900/50">
+                        <div class="text-[11px] text-rose-400">Cảnh báo nghiêm trọng</div>
+                        <div id="statCriticalIncidents" class="text-2xl font-black text-rose-400 font-mono mt-1">0</div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800">
+                        <div class="text-[11px] text-slate-400">Tổng người dùng</div>
+                        <div id="statTotalUsers" class="text-2xl font-black text-cyan-400 font-mono mt-1">0</div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-amber-900/50">
+                        <div class="text-[11px] text-amber-400">Tài khoản bị khóa</div>
+                        <div id="statLockedUsers" class="text-2xl font-black text-amber-400 font-mono mt-1">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 1: Security Incident Logs Table -->
+            <div class="glass-card rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i>
+                            <span>Nhật Ký Cảnh Báo An Ninh & Hoạt Động Người Dùng</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Tự động ghi nhận các sự cố bảo mật (BOLA/IDOR), thời điểm đăng ký tài khoản mới và lịch sử đăng nhập.</p>
+                    </div>
+                    <span class="text-[11px] font-mono text-slate-500">Tự động cập nhật mỗi 5 giây</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 text-[11px] uppercase tracking-wider">
+                                <th class="pb-3 px-3">Thời gian</th>
+                                <th class="pb-3 px-3">Loại sự kiện</th>
+                                <th class="pb-3 px-3">Mức độ</th>
+                                <th class="pb-3 px-3">Tài khoản</th>
+                                <th class="pb-3 px-3">Endpoint API</th>
+                                <th class="pb-3 px-3">Chi tiết hoạt động</th>
+                                <th class="pb-3 px-3 text-right">Quyết định của Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="securityLogsTableBody" class="divide-y divide-slate-800/60 font-medium">
+                            <tr><td colspan="7" class="py-6 text-center text-slate-500">Đang nạp nhật ký an ninh...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 2: User Access & Ban/Unban Management Table -->
+            <div class="glass-card rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="border-b border-slate-800 pb-4">
+                    <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-users-gear text-cyan-400"></i>
+                        <span>Quản Lý Phân Quyền & Khóa / Mở Khóa Tài Khoản (User Access Control)</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Admin có toàn quyền can thiệp, khóa hoặc khôi phục quyền truy cập của bất kỳ tài khoản nào.</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 text-[11px] uppercase tracking-wider">
+                                <th class="pb-3 px-3">ID</th>
+                                <th class="pb-3 px-3">Tên tài khoản</th>
+                                <th class="pb-3 px-3">Họ và tên / Email</th>
+                                <th class="pb-3 px-3">Vai trò</th>
+                                <th class="pb-3 px-3">Ngày tạo tài khoản</th>
+                                <th class="pb-3 px-3">Đăng nhập gần nhất</th>
+                                <th class="pb-3 px-3 text-center">Sai Pass</th>
+                                <th class="pb-3 px-3">Trạng thái</th>
+                                <th class="pb-3 px-3 text-right">Hành động của Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminUsersTableBody" class="divide-y divide-slate-800/60 font-medium">
+                            <tr><td colspan="9" class="py-6 text-center text-slate-500">Đang nạp danh sách người dùng...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- CART SLIDE-OVER DRAWER -->
+    <div id="cartDrawerBackdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden transition-opacity" onclick="toggleCartDrawer(false)">
+        <div class="fixed inset-y-0 right-0 max-w-md w-full bg-slate-950 border-l border-slate-800 shadow-2xl flex flex-col p-6 z-50" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-bag-shopping text-cyan-400 text-lg"></i>
+                    <h3 class="font-bold text-base text-white">Giỏ hàng công nghệ</h3>
+                    <span id="drawerCartCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-900 text-cyan-400 font-mono">0</span>
+                </div>
+                <button onclick="toggleCartDrawer(false)" class="text-slate-400 hover:text-white text-base">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Cart Items List -->
+            <div id="cartItemsContainer" class="flex-1 overflow-y-auto py-4 space-y-3 custom-scrollbar"></div>
+
+            <!-- Cart Summary & Checkout Form -->
+            <div class="border-t border-slate-800 pt-4 space-y-3">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-slate-400">Tổng thanh toán:</span>
+                    <span id="cartTotalPrice" class="text-base font-extrabold text-cyan-400 font-mono">0 đ</span>
+                </div>
+
+                <form id="checkoutForm" onsubmit="handleCheckout(event)" class="space-y-2 text-xs">
+                    <div>
+                        <input type="text" id="orderCustomerName" required placeholder="Họ và tên người nhận"
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <input type="tel" id="orderPhone" required placeholder="Số điện thoại nhận hàng"
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <input type="text" id="orderAddress" required placeholder="Địa chỉ giao hàng chi tiết"
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                    </div>
+                    <button type="submit" id="btnPlaceOrder"
+                        class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 font-bold text-xs text-black shadow-lg shadow-cyan-500/20 transition flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-credit-card"></i>
+                        <span>Xác nhận đặt mua thiết bị</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD / EDIT PRODUCT -->
+    <div id="productModalBackdrop" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 id="productModalTitle" class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-plus text-cyan-400"></i>
+                    <span>Thêm thiết bị công nghệ mới</span>
+                </h3>
+                <button onclick="closeProductModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="productForm" onsubmit="handleProductFormSubmit(event)" class="mt-4 space-y-3 text-xs">
+                <input type="hidden" id="productFormId">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Tên thiết bị <span class="text-rose-400">*</span></label>
+                    <input type="text" id="productFormName" required placeholder="Ví dụ: MacBook Pro 16 inch M3 Max"
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Thương hiệu <span class="text-rose-400">*</span></label>
+                        <input type="text" id="productFormBrand" required placeholder="Apple, Sony, ASUS ROG..."
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Danh mục <span class="text-rose-400">*</span></label>
+                        <select id="productFormCategory" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Giá bán (VND) <span class="text-rose-400">*</span></label>
+                        <input type="number" id="productFormPrice" required min="1000" step="10000" placeholder="34990000"
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Số lượng kho <span class="text-rose-400">*</span></label>
+                        <input type="number" id="productFormStock" required min="0" placeholder="25"
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Thông số kỹ thuật vắn tắt</label>
+                    <input type="text" id="productFormSpec" placeholder="Chip M3 Max • RAM 36GB • 1TB SSD..."
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Đường dẫn ảnh sản phẩm (HD URL)</label>
+                    <input type="url" id="productFormImageUrl" placeholder="https://images.unsplash.com/..."
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Mô tả sản phẩm</label>
+                    <textarea id="productFormDescription" rows="2" placeholder="Mô tả tính năng nổi bật..."
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"></textarea>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end space-x-2">
+                    <button type="button" onclick="closeProductModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold transition">Hủy</button>
+                    <button type="submit" id="btnProductFormSubmit" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Lưu sản phẩm</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SECURITY ALERT MODAL (HTTP 403 / 401 POPUP) -->
+    <div id="securityAlertModalBackdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-950 border border-rose-800/80 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-center space-y-4" onclick="event.stopPropagation()">
+            <div class="w-16 h-16 rounded-full bg-rose-950/80 border border-rose-700 flex items-center justify-center text-rose-400 text-3xl mx-auto shadow-lg shadow-rose-900/40 animate-bounce">
+                <i class="fa-solid fa-shield-virus"></i>
+            </div>
+            <div>
+                <div class="flex items-center justify-center space-x-2 mb-1.5">
+                    <span id="secAlertBadge" class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-rose-900/80 text-rose-200 border border-rose-700">HTTP 403 FORBIDDEN</span>
+                </div>
+                <h3 class="text-base font-extrabold text-white">CHỐT CHẶN AN NINH WEB API KÍCH HOẠT!</h3>
+            </div>
+            <div class="text-xs text-left space-y-2">
+                <p id="secAlertMessage" class="text-slate-200 font-semibold leading-relaxed">
+                    Hệ thống đã chặn đứng yêu cầu vì không đủ thẩm quyền truy cập!
+                </p>
+                <div id="secAlertDetail" class="p-3 bg-slate-900 rounded-xl border border-slate-800 font-mono text-[11px] text-rose-300 leading-normal">
+                    Mô tả vi phạm...
+                </div>
+            </div>
+            <button onclick="closeSecurityAlertModal()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition">
+                Đã hiểu & Tiếp tục quan sát
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer: Authentic E-Commerce Store -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-8 text-center text-xs text-slate-500 space-y-3">
+        <div class="flex flex-wrap items-center justify-center gap-6 text-slate-400 text-xs">
+            <a href="#" class="hover:text-cyan-400 transition">Về TechSec Gear</a>
+            <a href="#" class="hover:text-cyan-400 transition">Chính sách bảo hành & Đổi trả</a>
+            <a href="#" class="hover:text-cyan-400 transition">Hướng dẫn mua hàng</a>
+            <a href="#" class="hover:text-cyan-400 transition">Hệ thống showroom toàn quốc</a>
+            <a href="#" class="hover:text-cyan-400 transition">Chính sách bảo mật thông tin</a>
+        </div>
+        <p class="text-slate-400 font-semibold">© 2026 TechSec Gear – Hệ Thống Bán Lẻ Thiết Bị Công Nghệ & Gaming Gear Chính Hãng.</p>
+        <p class="text-[11px] text-slate-600">Tổng đài hỗ trợ: 1900 6868 (8:00 - 21:30) • Email: support@techsecgear.vn</p>
+    </footer>
+
+    <!-- JAVASCRIPT APPLICATION CORE -->
+    <script>
+        let currentAuthData = null;
+        let packetCount = 0;
+        let productsData = [];
+        let categoriesData = [];
+        let cart = [];
+        let currentCategoryId = 0;
+        let searchTimeout = null;
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedAuth = sessionStorage.getItem('TECHSEC_AUTH');
+            if (savedAuth) {
+                try {
+                    currentAuthData = JSON.parse(savedAuth);
+                } catch (e) {
+                    sessionStorage.removeItem('TECHSEC_AUTH');
+                }
+            }
+
+            const savedCart = sessionStorage.getItem('TECHSEC_CART');
+            if (savedCart) {
+                try {
+                    cart = JSON.parse(savedCart);
+                } catch (e) {
+                    cart = [];
+                }
+            }
+
+            updateAuthUI();
+            updateCartBadge();
+            fetchCategories();
+            fetchProducts();
+        });
+
+        // ================= NAVIGATION =================
+        let socRefreshTimer = null;
+
+        function switchNavTab(tab) {
+            if (socRefreshTimer) {
+                clearInterval(socRefreshTimer);
+                socRefreshTimer = null;
+            }
+
+            const currentUser = currentAuthData ? currentAuthData.user : null;
+            const userRoles = (currentUser && currentUser.roles) ? currentUser.roles : [];
+            const isAdmin = userRoles.includes('Admin');
+
+            // BẢO VỆ CHẶT CHẼ: Chỉ duy nhất Admin mới được vào tab 'soc'
+            if (tab === 'soc' && !isAdmin) {
+                alert('🛡️ Quyền truy cập bị từ chối: Chỉ Quản trị viên (Admin) mới có thẩm quyền mở Trung tâm Giám sát An ninh (SOC)!');
+                tab = 'shop';
+            }
+
+            const tabs = ['shop', 'orders', 'soc', 'auth'];
+            tabs.forEach(t => {
+                const view = document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                const btn = document.getElementById(`navTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (view) view.classList.add('hidden');
+                if (btn) {
+                    if (t === 'soc') {
+                        btn.className = `px-5 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:text-white transition flex items-center space-x-2 ${isAdmin ? '' : 'hidden'}`;
+                    } else {
+                        btn.className = "px-5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-2";
+                    }
+                }
+            });
+
+            if (tab === 'shop') {
+                document.getElementById('viewShop').classList.remove('hidden');
+                const btn = document.getElementById('navTabShop');
+                if (btn) btn.className = "px-5 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-cyan-600 text-black shadow-sm";
+            } else if (tab === 'orders') {
+                document.getElementById('viewOrders').classList.remove('hidden');
+                const btn = document.getElementById('navTabOrders');
+                if (btn) btn.className = "px-5 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-cyan-600 text-black shadow-sm";
+                fetchOrders();
+            } else if (tab === 'soc' && isAdmin) {
+                document.getElementById('viewSoc').classList.remove('hidden');
+                const btn = document.getElementById('navTabSoc');
+                if (btn) btn.className = "px-5 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-rose-600 text-white shadow-sm shadow-rose-600/30";
+                fetchSocData();
+                socRefreshTimer = setInterval(fetchSocData, 5000); // Tự động làm mới mỗi 5 giây
+            } else if (tab === 'auth') {
+                document.getElementById('viewAuth').classList.remove('hidden');
+                const btn = document.getElementById('navTabAuth');
+                if (btn) btn.className = "px-5 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-cyan-600 text-black shadow-sm";
+            }
+        }
+
+        // ================= DRAWER TOGGLE (INSPECTOR & CART) =================
+        function toggleInspectorDrawer(open) {
+            const drawer = document.getElementById('inspectorDrawerBackdrop');
+            if (open) {
+                drawer.classList.remove('hidden');
+            } else {
+                drawer.classList.add('hidden');
+            }
+        }
+
+        // ================= CATEGORIES & PRODUCTS =================
+        async function fetchCategories() {
+            try {
+                const res = await callApi('/api/categories', 'GET');
+                if (res.ok && res.data) {
+                    categoriesData = res.data;
+                    renderCategoryPills();
+                    populateCategoryDropdown();
+                }
+            } catch (err) {
+                console.error("Lỗi tải danh mục:", err);
+            }
+        }
+
+        function renderCategoryPills() {
+            const container = document.getElementById('categoryPills');
+            container.innerHTML = `
+                <button onclick="filterCategory(0)" id="catBtn-0" class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap ${currentCategoryId === 0 ? 'bg-cyan-500 text-black shadow' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'} transition">
+                    Tất cả thiết bị
+                </button>
+            `;
+
+            categoriesData.forEach(cat => {
+                const isActive = currentCategoryId === cat.id;
+                const btn = document.createElement('button');
+                btn.onclick = () => filterCategory(cat.id);
+                btn.id = `catBtn-${cat.id}`;
+                btn.className = `px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap ${isActive ? 'bg-cyan-500 text-black shadow' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'} transition`;
+                btn.innerHTML = `${cat.name} <span class="text-[10px] opacity-75 font-mono ml-0.5">(${cat.productCount || 0})</span>`;
+                container.appendChild(btn);
+            });
+        }
+
+        function populateCategoryDropdown() {
+            const select = document.getElementById('productFormCategory');
+            select.innerHTML = '';
+            categoriesData.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.textContent = cat.name;
+                select.appendChild(opt);
+            });
+        }
+
+        function filterCategory(catId) {
+            currentCategoryId = catId;
+            renderCategoryPills();
+            fetchProducts();
+        }
+
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                fetchProducts();
+            }, 300);
+        }
+
+        async function fetchProducts() {
+            const search = document.getElementById('searchInput').value.trim();
+            const sortBy = document.getElementById('sortBySelect').value;
+
+            let url = `/api/products?sortBy=${sortBy}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (currentCategoryId > 0) url += `&categoryId=${currentCategoryId}`;
+
+            const res = await callApi(url, 'GET');
+            if (res.ok && res.data) {
+                productsData = res.data;
+                renderProductsGrid();
+            }
+        }
+
+        function renderProductsGrid() {
+            const grid = document.getElementById('productsGrid');
+            const counter = document.getElementById('productCountBadge');
+            counter.textContent = `${productsData.length} sản phẩm`;
+
+            if (productsData.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full p-12 text-center text-slate-500 glass-card rounded-2xl">
+                        <i class="fa-solid fa-box-open text-4xl mb-3 text-slate-600"></i>
+                        <p class="font-bold text-slate-300">Không tìm thấy thiết bị nào phù hợp</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const currentUser = currentAuthData ? currentAuthData.user : null;
+            const userRole = (currentUser && currentUser.roles && currentUser.roles.length > 0) ? currentUser.roles[0] : '';
+            const isStaffOrAdmin = userRole === 'Admin' || userRole === 'NhanVien';
+
+            grid.innerHTML = productsData.map(p => {
+                const formattedPrice = new Intl.NumberFormat('vi-VN').format(p.price) + ' đ';
+                const isOutOfStock = p.stock <= 0;
+
+                return `
+                    <div class="glass-card rounded-2xl overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1">
+                        <!-- Product Image Area -->
+                        <div class="relative w-full h-56 bg-slate-900 overflow-hidden flex items-center justify-center">
+                            <img src="${p.imageUrl}" alt="${p.name}" class="w-full h-full object-cover product-img" onerror="this.src='https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80'">
+                            <span class="absolute top-3 left-3 px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider bg-slate-950/80 text-cyan-300 border border-cyan-800/80 backdrop-blur">
+                                ${p.brand || 'TechSec'}
+                            </span>
+                            <span class="absolute top-3 right-3 px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold ${isOutOfStock ? 'bg-rose-950/90 text-rose-300 border border-rose-800' : 'bg-emerald-950/90 text-emerald-300 border border-emerald-800'} backdrop-blur">
+                                ${isOutOfStock ? 'Hết hàng' : `Còn ${p.stock}`}
+                            </span>
+                        </div>
+
+                        <!-- Product Content Area -->
+                        <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+                            <div>
+                                <div class="text-[11px] text-cyan-400 font-semibold mb-1">${p.categoryName || 'Thiết bị'}</div>
+                                <h3 class="text-sm font-bold text-white line-clamp-1 group-hover:text-cyan-300 transition" title="${p.name}">
+                                    ${p.name}
+                                </h3>
+                                <p class="text-[11px] text-slate-400 line-clamp-2 mt-1 leading-relaxed" title="${p.specification || p.description}">
+                                    ${p.specification || p.description || 'Chính hãng mới 100%'}
+                                </p>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-800">
+                                <div class="flex items-baseline justify-between mb-3">
+                                    <span class="text-xs text-slate-400">Giá niêm yết:</span>
+                                    <span class="text-base font-black text-cyan-400 font-mono">${formattedPrice}</span>
+                                </div>
+
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="addToCart(${p.id})" ${isOutOfStock ? 'disabled' : ''}
+                                        class="flex-1 py-2 px-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-600 font-extrabold text-xs text-black transition flex items-center justify-center space-x-1.5 shadow-md shadow-cyan-500/10">
+                                        <i class="fa-solid fa-cart-plus"></i>
+                                        <span>${isOutOfStock ? 'Tạm hết' : 'Thêm vào giỏ'}</span>
+                                    </button>
+
+                                    <!-- Edit & Delete buttons: Only visible if Admin or Staff! -->
+                                    ${isStaffOrAdmin ? `
+                                        <button onclick="openEditProductModal(${p.id})" title="Chỉnh sửa sản phẩm"
+                                            class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </button>
+                                        <button onclick="confirmDeleteProduct(${p.id}, '${p.name.replace(/'/g, "\\'")}')" title="Xóa thiết bị (Chỉ Admin)"
+                                            class="p-2 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-800 transition">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ================= CART MANAGEMENT =================
+        function toggleCartDrawer(open) {
+            const drawer = document.getElementById('cartDrawerBackdrop');
+            if (open) {
+                renderCartDrawer();
+                drawer.classList.remove('hidden');
+            } else {
+                drawer.classList.add('hidden');
+            }
+        }
+
+        function addToCart(productId) {
+            const p = productsData.find(item => item.id === productId);
+            if (!p) return;
+
+            const existing = cart.find(item => item.productId === productId);
+            if (existing) {
+                if (existing.quantity >= p.stock) {
+                    alert(`Sản phẩm này chỉ còn ${p.stock} món trong kho!`);
+                    return;
+                }
+                existing.quantity++;
+            } else {
+                cart.push({
+                    productId: p.id,
+                    name: p.name,
+                    brand: p.brand,
+                    price: p.price,
+                    imageUrl: p.imageUrl,
+                    quantity: 1,
+                    maxStock: p.stock
+                });
+            }
+
+            saveCart();
+            updateCartBadge();
+            toggleCartDrawer(true);
+        }
+
+        function updateCartQuantity(productId, delta) {
+            const item = cart.find(i => i.productId === productId);
+            if (!item) return;
+
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                cart = cart.filter(i => i.productId !== productId);
+            } else if (item.quantity > item.maxStock) {
+                item.quantity = item.maxStock;
+                alert(`Số lượng đạt tối đa tồn kho (${item.maxStock})`);
+            }
+
+            saveCart();
+            updateCartBadge();
+            renderCartDrawer();
+        }
+
+        function saveCart() {
+            sessionStorage.setItem('TECHSEC_CART', JSON.stringify(cart));
+        }
+
+        function updateCartBadge() {
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const badge = document.getElementById('cartBadge');
+            const drawerBadge = document.getElementById('drawerCartCount');
+            if (badge) badge.textContent = totalItems;
+            if (drawerBadge) drawerBadge.textContent = totalItems;
+        }
+
+        function renderCartDrawer() {
+            const container = document.getElementById('cartItemsContainer');
+            const totalPriceEl = document.getElementById('cartTotalPrice');
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="h-48 flex flex-col items-center justify-center text-center text-slate-500">
+                        <i class="fa-solid fa-cart-shopping text-3xl mb-2 text-slate-600"></i>
+                        <p class="font-bold text-slate-400 text-xs">Giỏ hàng của bạn đang trống</p>
+                    </div>
+                `;
+                totalPriceEl.textContent = '0 đ';
+                return;
+            }
+
+            let total = 0;
+            container.innerHTML = cart.map(item => {
+                const subTotal = item.price * item.quantity;
+                total += subTotal;
+                return `
+                    <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center space-x-3 text-xs">
+                        <img src="${item.imageUrl}" class="w-12 h-12 rounded-lg object-cover bg-slate-800 flex-shrink-0" onerror="this.src='https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80'">
+                        <div class="flex-1 min-w-0">
+                            <h5 class="font-bold text-white truncate">${item.name}</h5>
+                            <span class="text-[11px] text-cyan-400 font-mono">${new Intl.NumberFormat('vi-VN').format(item.price)} đ</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                            <button onclick="updateCartQuantity(${item.productId}, -1)" class="w-5 h-5 rounded hover:bg-slate-800 text-slate-300 font-bold">-</button>
+                            <span class="w-6 text-center font-mono font-bold text-white text-xs">${item.quantity}</span>
+                            <button onclick="updateCartQuantity(${item.productId}, 1)" class="w-5 h-5 rounded hover:bg-slate-800 text-slate-300 font-bold">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            totalPriceEl.textContent = new Intl.NumberFormat('vi-VN').format(total) + ' đ';
+
+            if (currentAuthData && currentAuthData.user) {
+                const u = currentAuthData.user;
+                if (!document.getElementById('orderCustomerName').value) {
+                    document.getElementById('orderCustomerName').value = u.fullName || u.username;
+                }
+            }
+        }
+
+        // ================= ORDER CHECKOUT =================
+        async function handleCheckout(e) {
+            e.preventDefault();
+
+            if (!currentAuthData) {
+                alert("Vui lòng đăng nhập để hoàn tất đặt mua sản phẩm công nghệ!");
+                toggleCartDrawer(false);
+                switchNavTab('auth');
+                return;
+            }
+
+            if (cart.length === 0) {
+                alert("Giỏ hàng của bạn đang trống!");
+                return;
+            }
+
+            const btn = document.getElementById('btnPlaceOrder');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Đang xử lý đơn hàng...</span>`;
+
+            const payload = {
+                customerName: document.getElementById('orderCustomerName').value.trim(),
+                phoneNumber: document.getElementById('orderPhone').value.trim(),
+                shippingAddress: document.getElementById('orderAddress').value.trim(),
+                notes: "Đặt hàng qua TechSec Web Client",
+                items: cart.map(i => ({ productId: i.productId, quantity: i.quantity }))
+            };
+
+            const res = await callApi('/api/orders', 'POST', payload);
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-credit-card"></i><span>Xác nhận đặt mua thiết bị</span>`;
+
+            if (res.ok) {
+                alert("🎉 Đặt mua thiết bị thành công! Đơn hàng của bạn đang được xử lý.");
+                cart = [];
+                saveCart();
+                updateCartBadge();
+                toggleCartDrawer(false);
+                switchNavTab('orders');
+            } else {
+                handleApiSecurityError(res);
+            }
+        }
+
+        // ================= ORDERS LIST & BOLA TEST =================
+        async function fetchOrders() {
+            const tableBody = document.getElementById('ordersTableBody');
+            tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-500">Đang nạp dữ liệu đơn hàng...</td></tr>`;
+
+            const currentUser = currentAuthData ? currentAuthData.user : null;
+            const userRole = (currentUser && currentUser.roles && currentUser.roles.length > 0) ? currentUser.roles[0] : '';
+            const isStaffOrAdmin = userRole === 'Admin' || userRole === 'NhanVien';
+
+            const endpoint = isStaffOrAdmin ? '/api/orders' : '/api/orders/my-orders';
+            const res = await callApi(endpoint, 'GET');
+
+            if (userRole === 'Admin') {
+                document.getElementById('adminRevenueBox').classList.remove('hidden');
+                fetchAdminStats();
+            } else {
+                document.getElementById('adminRevenueBox').classList.add('hidden');
+            }
+
+            if (res.ok && res.data) {
+                const orders = res.data;
+                if (orders.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-500">Chưa có đơn hàng nào được tạo.</td></tr>`;
+                    return;
+                }
+
+                tableBody.innerHTML = orders.map(o => {
+                    let statusBadge = '';
+                    if (o.status === 'Completed') statusBadge = '<span class="px-2 py-0.5 rounded font-mono text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800">Completed</span>';
+                    else if (o.status === 'Processing') statusBadge = '<span class="px-2 py-0.5 rounded font-mono text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-800">Processing</span>';
+                    else if (o.status === 'Pending') statusBadge = '<span class="px-2 py-0.5 rounded font-mono text-[10px] bg-amber-950 text-amber-300 border border-amber-800">Pending</span>';
+                    else statusBadge = `<span class="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400">${o.status}</span>`;
+
+                    const itemsList = o.items.map(i => `${i.productName} (x${i.quantity})`).join(', ');
+
+                    return `
+                        <tr class="hover:bg-slate-900/60 transition">
+                            <td class="py-3 px-3 font-mono font-bold text-cyan-400">#${o.id} - ${o.orderCode}</td>
+                            <td class="py-3 px-3">
+                                <div class="font-semibold text-white">${o.customerName}</div>
+                                <div class="text-[10px] text-slate-500">${o.phoneNumber}</div>
+                            </td>
+                            <td class="py-3 px-3 max-w-xs truncate text-slate-300" title="${itemsList}">${itemsList}</td>
+                            <td class="py-3 px-3 font-mono font-extrabold text-cyan-400">${new Intl.NumberFormat('vi-VN').format(o.totalAmount)} đ</td>
+                            <td class="py-3 px-3">${statusBadge}</td>
+                            <td class="py-3 px-3 text-right space-x-1">
+                                <button onclick="viewSingleOrder(${o.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-200 transition">
+                                    Chi tiết
+                                </button>
+                                ${isStaffOrAdmin ? `
+                                    <button onclick="changeOrderStatus(${o.id}, '${o.status === 'Pending' ? 'Processing' : 'Completed'}')" class="px-2.5 py-1 rounded-lg bg-cyan-950 hover:bg-cyan-900 text-[11px] text-cyan-300 border border-cyan-800 transition">
+                                        Duyệt
+                                    </button>
+                                ` : ''}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-rose-400 font-semibold">${res.status === 401 ? 'Vui lòng đăng nhập để xem đơn hàng của bạn!' : 'Lỗi tải đơn hàng.'}</td></tr>`;
+            }
+        }
+
+        async function fetchAdminStats() {
+            const res = await callApi('/api/orders/stats', 'GET');
+            if (res.ok && res.data) {
+                const s = res.data;
+                document.getElementById('statRevenue').textContent = new Intl.NumberFormat('vi-VN').format(s.totalRevenue) + ' đ';
+                document.getElementById('statOrders').textContent = s.totalOrders;
+                document.getElementById('statProductsSold').textContent = s.totalProductsSold || 0;
+                document.getElementById('statPending').textContent = s.pendingOrders;
+            }
+        }
+
+        async function viewSingleOrder(id) {
+            const res = await callApi(`/api/orders/${id}`, 'GET');
+            if (res.ok) {
+                const o = res.data;
+                alert(`ĐƠN HÀNG #${o.id} (${o.orderCode})\nKhách hàng: ${o.customerName}\nĐịa chỉ: ${o.shippingAddress}\nTổng tiền: ${new Intl.NumberFormat('vi-VN').format(o.totalAmount)} đ\nTrạng thái: ${o.status}`);
+            } else {
+                handleApiSecurityError(res);
+            }
+        }
+
+        async function changeOrderStatus(id, newStatus) {
+            const res = await callApi(`/api/orders/${id}/status`, 'PUT', { status: newStatus });
+            if (res.ok) {
+                fetchOrders();
+            } else {
+                handleApiSecurityError(res);
+            }
+        }
+
+        // ================= BOLA EXPLOIT TEST BUTTON =================
+        async function triggerBolaExploitTest() {
+            const orderId = document.getElementById('bolaOrderIdInput').value || 2;
+            const resBox = document.getElementById('bolaResultBox');
+            resBox.classList.remove('hidden');
+            resBox.className = "p-3.5 rounded-xl text-xs border bg-slate-900 border-slate-700 text-slate-300";
+            resBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1.5 text-cyan-400"></i>Đang gửi yêu cầu HTTP GET /api/orders/${orderId}...`;
+
+            const res = await callApi(`/api/orders/${orderId}`, 'GET');
+
+            if (res.status === 403) {
+                resBox.className = "p-3.5 rounded-xl text-xs border bg-rose-950/80 border-rose-700 text-rose-200";
+                resBox.innerHTML = `
+                    <div class="font-bold text-sm text-rose-300 flex items-center mb-1">
+                        <i class="fa-solid fa-shield-halved mr-1.5 text-base"></i>
+                        PHÒNG THỦ BOLA KÍCH HOẠT (HTTP 403 FORBIDDEN):
+                    </div>
+                    <p>${res.data?.message || 'Bạn không có quyền xem đơn hàng của người khác!'}</p>
+                    <div class="mt-2 font-mono text-[11px] text-rose-400 bg-black/40 p-2 rounded-lg">
+                        Chi tiết: ${res.data?.detail || 'Access denied under OWASP Top 1.'}
+                    </div>
+                `;
+                triggerSecurityModal("HTTP 403 FORBIDDEN - BOLA DEFENSE", res.data?.message, res.data?.detail);
+            } else if (res.status === 200) {
+                resBox.className = "p-3.5 rounded-xl text-xs border bg-emerald-950/80 border-emerald-700 text-emerald-200";
+                resBox.innerHTML = `
+                    <div class="font-bold text-sm text-emerald-300 flex items-center mb-1">
+                        <i class="fa-solid fa-circle-check mr-1.5 text-base"></i>
+                        TRUY CẬP HỢP LỆ (HTTP 200 OK):
+                    </div>
+                    <p>Bạn là chủ đơn hàng này (hoặc có quyền Admin/Nhân viên) nên được xem dữ liệu đơn #${res.data?.id}.</p>
+                `;
+            } else if (res.status === 401) {
+                resBox.className = "p-3.5 rounded-xl text-xs border bg-amber-950/80 border-amber-700 text-amber-200";
+                resBox.innerHTML = `<b>Lỗi HTTP 401 Unauthorized:</b> Bạn chưa đăng nhập.`;
+            } else {
+                resBox.innerHTML = `HTTP Status: ${res.status}`;
+            }
+        }
+
+        // ================= PRODUCT CRUD MODALS =================
+        function openAddProductModal() {
+            document.getElementById('productFormId').value = '';
+            document.getElementById('productFormName').value = '';
+            document.getElementById('productFormBrand').value = '';
+            document.getElementById('productFormPrice').value = '';
+            document.getElementById('productFormStock').value = '';
+            document.getElementById('productFormSpec').value = '';
+            document.getElementById('productFormImageUrl').value = '';
+            document.getElementById('productFormDescription').value = '';
+            document.getElementById('productModalTitle').innerHTML = `<i class="fa-solid fa-plus text-cyan-400 mr-2"></i>Thêm thiết bị công nghệ mới`;
+            document.getElementById('productModalBackdrop').classList.remove('hidden');
+        }
+
+        function openEditProductModal(id) {
+            const p = productsData.find(item => item.id === id);
+            if (!p) return;
+
+            document.getElementById('productFormId').value = p.id;
+            document.getElementById('productFormName').value = p.name;
+            document.getElementById('productFormBrand').value = p.brand;
+            document.getElementById('productFormPrice').value = p.price;
+            document.getElementById('productFormStock').value = p.stock;
+            document.getElementById('productFormSpec').value = p.specification || '';
+            document.getElementById('productFormImageUrl').value = p.imageUrl;
+            document.getElementById('productFormDescription').value = p.description || '';
+            document.getElementById('productFormCategory').value = p.categoryId;
+
+            document.getElementById('productModalTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-cyan-400 mr-2"></i>Cập nhật: ${p.name}`;
+            document.getElementById('productModalBackdrop').classList.remove('hidden');
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModalBackdrop').classList.add('hidden');
+        }
+
+        async function handleProductFormSubmit(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('productFormId').value;
+            const payload = {
+                name: document.getElementById('productFormName').value.trim(),
+                brand: document.getElementById('productFormBrand').value.trim(),
+                price: parseFloat(document.getElementById('productFormPrice').value),
+                stock: parseInt(document.getElementById('productFormStock').value),
+                specification: document.getElementById('productFormSpec').value.trim(),
+                imageUrl: document.getElementById('productFormImageUrl').value.trim(),
+                description: document.getElementById('productFormDescription').value.trim(),
+                categoryId: parseInt(document.getElementById('productFormCategory').value)
+            };
+
+            const btn = document.getElementById('btnProductFormSubmit');
+            btn.disabled = true;
+
+            let res;
+            if (id) {
+                res = await callApi(`/api/products/${id}`, 'PUT', payload);
+            } else {
+                res = await callApi('/api/products', 'POST', payload);
+            }
+
+            btn.disabled = false;
+
+            if (res.ok) {
+                closeProductModal();
+                fetchProducts();
+                fetchCategories();
+            } else {
+                handleApiSecurityError(res);
+            }
+        }
+
+        async function confirmDeleteProduct(id, name) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa thiết bị '${name}' khỏi hệ thống?`)) return;
+
+            const res = await callApi(`/api/products/${id}`, 'DELETE');
+            if (res.ok) {
+                alert(`Đã xóa thành công sản phẩm #${id}!`);
+                fetchProducts();
+                fetchCategories();
+            } else {
+                handleApiSecurityError(res);
+            }
+        }
+
+        // ================= AUTHENTICATION & LOGIN LOGIC =================
+        function switchAuthSubTab(tab) {
+            const btnLogin = document.getElementById('tabLogin');
+            const btnReg = document.getElementById('tabRegister');
+            const formLogin = document.getElementById('formLogin');
+            const formReg = document.getElementById('formRegister');
+            hideAuthAlert();
+
+            if (tab === 'login') {
+                btnLogin.className = "pb-3 px-4 font-bold text-sm text-cyan-400 border-b-2 border-cyan-500 flex items-center space-x-2";
+                btnReg.className = "pb-3 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 flex items-center space-x-2";
+                formLogin.classList.remove('hidden');
+                formReg.classList.add('hidden');
+            } else {
+                btnReg.className = "pb-3 px-4 font-bold text-sm text-emerald-400 border-b-2 border-emerald-500 flex items-center space-x-2";
+                btnLogin.className = "pb-3 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 flex items-center space-x-2";
+                formReg.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+            }
+        }
+
+        function fillQuickLogin(username, password) {
+            switchNavTab('auth');
+            switchAuthSubTab('login');
+            document.getElementById('loginUsername').value = username;
+            document.getElementById('loginPassword').value = password;
+            showAuthAlert('info', `Đã nạp tài khoản <b>${username}</b>. Bấm Đăng nhập ngay!`);
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            hideAuthAlert();
+
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            const btn = document.getElementById('btnLoginSubmit');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang xác thực...`;
+
+            const res = await callApi('/api/auth/login', 'POST', { username, password });
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-right-to-bracket mr-1"></i><span>Đăng nhập hệ thống</span>`;
+
+            if (res.ok && res.data && res.data.success) {
+                currentAuthData = res.data;
+                sessionStorage.setItem('TECHSEC_AUTH', JSON.stringify(res.data));
+                showAuthAlert('success', `Đăng nhập thành công! Vai trò: <b>${res.data.user.roles.join(', ')}</b>.`);
+                updateAuthUI();
+                renderProductsGrid();
+                setTimeout(() => switchNavTab('shop'), 800);
+            } else {
+                showAuthAlert('error', `<b>Lỗi:</b> ${res.data?.message || 'Đăng nhập thất bại.'}`);
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            hideAuthAlert();
+
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const fullName = document.getElementById('regFullName').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showAuthAlert('error', 'Mật khẩu xác nhận không khớp!');
+                return;
+            }
+
+            const btn = document.getElementById('btnRegisterSubmit');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang tạo tài khoản...`;
+
+            const res = await callApi('/api/auth/register', 'POST', { username, email, fullName, password, confirmPassword });
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-user-plus mr-1"></i><span>Đăng ký tài khoản</span>`;
+
+            if (res.status === 201) {
+                showAuthAlert('success', `Đăng ký thành công! Hãy đăng nhập để mua sắm.`);
+                switchAuthSubTab('login');
+                fillQuickLogin(username, password);
+            } else {
+                showAuthAlert('error', `<b>Lỗi:</b> ${res.data?.message || 'Đăng ký thất bại.'}`);
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('TECHSEC_AUTH');
+            currentAuthData = null;
+            updateAuthUI();
+            renderProductsGrid();
+            showAuthAlert('info', 'Bạn đã đăng xuất.');
+        }
+
+        function updateAuthUI() {
+            const loginPrompt = document.getElementById('btnLoginPrompt');
+            const userProfile = document.getElementById('headerUserProfile');
+            const btnAddProd = document.getElementById('btnOpenAddProduct');
+            const navTabSoc = document.getElementById('navTabSoc');
+
+            if (currentAuthData && currentAuthData.user) {
+                const u = currentAuthData.user;
+                const role = (u.roles && u.roles.length > 0) ? u.roles[0] : 'KhachHang';
+
+                loginPrompt.classList.add('hidden');
+                userProfile.classList.remove('hidden');
+                userProfile.classList.add('flex');
+
+                document.getElementById('headerUsername').textContent = u.fullName || u.username;
+                document.getElementById('headerUserRole').textContent = role;
+                document.getElementById('headerUserAvatar').textContent = (u.fullName || u.username).charAt(0).toUpperCase();
+
+                // Show Admin/Staff Add button if applicable
+                if (role === 'Admin' || role === 'NhanVien') {
+                    if (btnAddProd) btnAddProd.classList.remove('hidden');
+                } else {
+                    if (btnAddProd) btnAddProd.classList.add('hidden');
+                }
+
+                // Show SOC Tab only for Admin
+                if (navTabSoc) {
+                    if (role === 'Admin') {
+                        navTabSoc.classList.remove('hidden');
+                    } else {
+                        navTabSoc.classList.add('hidden');
+                        const viewSoc = document.getElementById('viewSoc');
+                        if (viewSoc && !viewSoc.classList.contains('hidden')) {
+                            switchNavTab('shop');
+                        }
+                    }
+                }
+
+
+            } else {
+                loginPrompt.classList.remove('hidden');
+                userProfile.classList.add('hidden');
+                userProfile.classList.remove('flex');
+                if (btnAddProd) btnAddProd.classList.add('hidden');
+                if (navTabSoc) navTabSoc.classList.add('hidden');
+                const viewSoc = document.getElementById('viewSoc');
+                if (viewSoc && !viewSoc.classList.contains('hidden')) {
+                    switchNavTab('shop');
+                }
+            }
+        }
+
+        function showAuthAlert(type, html) {
+            const box = document.getElementById('authAlert');
+            const text = document.getElementById('authAlertText');
+            const icon = document.getElementById('authAlertIcon');
+            box.classList.remove('hidden');
+
+            if (type === 'error') {
+                box.className = "mb-6 p-4 rounded-xl text-xs border flex items-start space-x-3 bg-rose-950/80 border-rose-800 text-rose-200";
+                icon.className = "fa-solid fa-triangle-exclamation text-rose-400 text-sm mt-0.5";
+            } else if (type === 'success') {
+                box.className = "mb-6 p-4 rounded-xl text-xs border flex items-start space-x-3 bg-emerald-950/80 border-emerald-800 text-emerald-200";
+                icon.className = "fa-solid fa-circle-check text-emerald-400 text-sm mt-0.5";
+            } else {
+                box.className = "mb-6 p-4 rounded-xl text-xs border flex items-start space-x-3 bg-cyan-950/80 border-cyan-800 text-cyan-200";
+                icon.className = "fa-solid fa-circle-info text-cyan-400 text-sm mt-0.5";
+            }
+            text.innerHTML = html;
+        }
+
+        function hideAuthAlert() {
+            document.getElementById('authAlert').classList.add('hidden');
+        }
+
+        // ================= SECURITY MODAL HANDLER =================
+        function triggerSecurityModal(badgeText, messageText, detailText) {
+            document.getElementById('secAlertBadge').textContent = badgeText || 'HTTP 403 FORBIDDEN';
+            document.getElementById('secAlertMessage').textContent = messageText || 'Yêu cầu bị từ chối do không đủ quyền truy cập!';
+            document.getElementById('secAlertDetail').textContent = detailText || 'Security policy violation.';
+            document.getElementById('securityAlertModalBackdrop').classList.remove('hidden');
+        }
+
+        function closeSecurityAlertModal() {
+            document.getElementById('securityAlertModalBackdrop').classList.add('hidden');
+        }
+
+        function handleApiSecurityError(res) {
+            if (res.status === 403) {
+                const isSuspended = res.data?.error === "ACCOUNT_SUSPENDED";
+                triggerSecurityModal(
+                    isSuspended ? "HTTP 403 - TÀI KHOẢN BỊ KHÓA" : "HTTP 403 FORBIDDEN",
+                    res.data?.message || "Từ chối quyền hạn: Bạn không có thẩm quyền thực hiện thao tác này!",
+                    isSuspended ? "Tài khoản của bạn đã bị Quản trị viên khóa do phát hiện hành vi vi phạm an toàn thông tin!" : `Endpoint: ${res.url} | Yêu cầu bị chặn bởi Middleware Backend`
+                );
+            } else if (res.status === 401) {
+                triggerSecurityModal(
+                    "HTTP 401 UNAUTHORIZED",
+                    "Chưa xác thực: Yêu cầu thiếu Bearer Token hoặc phiên làm việc đã hết hạn!",
+                    `Endpoint: ${res.url}`
+                );
+            } else {
+                alert(`Lỗi HTTP ${res.status}: ${res.data?.message || 'Yêu cầu không thể hoàn tất.'}`);
+            }
+        }
+
+        // ================= SECURITY OPERATIONS CENTER (SOC) & BOLA TESTING =================
+        function formatVnDateTime(dt, includeSeconds = true) {
+            if (!dt) return '<span class="text-slate-500 italic">Chưa đăng nhập</span>';
+            let s = String(dt).trim();
+            const tIndex = s.indexOf('T');
+            if (tIndex !== -1) {
+                const timePart = s.substring(tIndex);
+                if (!timePart.endsWith('Z') && !timePart.includes('+') && !timePart.includes('-')) {
+                    s += 'Z';
+                }
+            } else if (!s.endsWith('Z') && !s.includes('+')) {
+                s += 'Z';
+            }
+            const d = new Date(s);
+            if (isNaN(d.getTime())) return dt;
+            return d.toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: includeSeconds ? '2-digit' : undefined,
+                hour12: false
+            }) + ' ' + d.toLocaleDateString('vi-VN');
+        }
+
+        async function fetchSocData() {
+            if (!currentAuthData || !currentAuthData.user || !currentAuthData.user.roles.includes('Admin')) {
+                return;
+            }
+
+            // 1. Nạp nhật ký an ninh (Security Logs)
+            const logsRes = await callApi('/api/admin/security-logs', 'GET');
+            const logsTbody = document.getElementById('securityLogsTableBody');
+
+            if (logsRes.ok && logsRes.data) {
+                const logs = logsRes.data;
+                document.getElementById('statTotalIncidents').textContent = logs.length;
+                document.getElementById('statCriticalIncidents').textContent = logs.filter(l => l.severity === 'Critical').length;
+
+                if (logs.length === 0) {
+                    logsTbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">Hệ thống an toàn. Chưa phát hiện sự cố vi phạm nào.</td></tr>`;
+                } else {
+                    logsTbody.innerHTML = logs.map(l => {
+                        const dateStr = formatVnDateTime(l.createdAt, true);
+
+                        let typeBadge = `<span class="font-mono text-cyan-300">${l.incidentType}</span>`;
+                        if (l.incidentType === 'USER_REGISTERED') {
+                            typeBadge = `<span class="font-mono text-emerald-400 font-bold">✨ Đăng Ký Mới</span>`;
+                        } else if (l.incidentType === 'USER_LOGIN_SUCCESS') {
+                            typeBadge = `<span class="font-mono text-sky-400 font-bold">🔑 Đăng Nhập</span>`;
+                        } else if (l.incidentType.includes('BOLA')) {
+                            typeBadge = `<span class="font-mono text-purple-300 font-bold">🛡️ BOLA / IDOR</span>`;
+                        } else if (l.incidentType.includes('BRUTE')) {
+                            typeBadge = `<span class="font-mono text-amber-300 font-bold">⚠️ Dò Mật Khẩu</span>`;
+                        } else if (l.incidentType.includes('LOCKED')) {
+                            typeBadge = `<span class="font-mono text-rose-300 font-bold">🚫 Đã Khóa</span>`;
+                        } else if (l.incidentType.includes('UNLOCKED')) {
+                            typeBadge = `<span class="font-mono text-emerald-300 font-bold">✅ Đã Mở Khóa</span>`;
+                        }
+
+                        let sevBadge = `<span class="px-2 py-0.5 rounded font-mono text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-800 font-bold">Info</span>`;
+                        if (l.severity === 'Critical') {
+                            sevBadge = `<span class="px-2 py-0.5 rounded font-mono text-[10px] bg-rose-950 text-rose-300 border border-rose-800 font-bold animate-pulse">Critical</span>`;
+                        } else if (l.severity === 'Warning') {
+                            sevBadge = `<span class="px-2 py-0.5 rounded font-mono text-[10px] bg-amber-950 text-amber-300 border border-amber-800 font-bold">Warning</span>`;
+                        }
+
+                        const canBan = l.userId && l.username !== 'admin';
+                        let banButton = `<span class="text-slate-600 font-mono text-[10px]">Hệ thống</span>`;
+                        if (canBan) {
+                            if (l.isUserActive) {
+                                banButton = `<button onclick="toggleUserStatus(${l.userId})" class="px-2.5 py-1 rounded-lg bg-rose-950 hover:bg-rose-900 text-[11px] text-rose-300 border border-rose-800 transition font-bold"><i class="fa-solid fa-ban mr-1"></i>Khóa tài khoản</button>`;
+                            } else {
+                                banButton = `<button onclick="toggleUserStatus(${l.userId})" class="px-2.5 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-[11px] text-emerald-300 border border-emerald-800 transition font-bold"><i class="fa-solid fa-lock-open mr-1"></i>Mở khóa</button>`;
+                            }
+                        }
+
+                        return `
+                            <tr class="hover:bg-slate-900/60 transition">
+                                <td class="py-3 px-3 font-mono text-slate-400 whitespace-nowrap">${dateStr}</td>
+                                <td class="py-3 px-3 whitespace-nowrap">${typeBadge}</td>
+                                <td class="py-3 px-3">${sevBadge}</td>
+                                <td class="py-3 px-3 font-bold text-white whitespace-nowrap">${l.username} ${l.userId ? `<span class="text-slate-500 font-normal font-mono">(ID: ${l.userId})</span>` : ''}</td>
+                                <td class="py-3 px-3 font-mono text-[11px] text-cyan-400 whitespace-nowrap">${l.targetResource}</td>
+                                <td class="py-3 px-3 text-slate-300 max-w-xs truncate" title="${l.description}">${l.description}</td>
+                                <td class="py-3 px-3 text-right whitespace-nowrap">${banButton}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // 2. Nạp danh sách người dùng (Users List)
+            const usersRes = await callApi('/api/admin/users', 'GET');
+            const usersTbody = document.getElementById('adminUsersTableBody');
+
+            if (usersRes.ok && usersRes.data) {
+                const users = usersRes.data;
+                document.getElementById('statTotalUsers').textContent = users.length;
+                document.getElementById('statLockedUsers').textContent = users.filter(u => !u.isActive).length;
+
+                usersTbody.innerHTML = users.map(u => {
+                    const isSelf = currentAuthData.user.id === u.id;
+                    const statusBadge = u.isActive
+                        ? `<span class="px-2 py-0.5 rounded font-mono text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold">Đang hoạt động</span>`
+                        : `<span class="px-2 py-0.5 rounded font-mono text-[10px] bg-rose-950 text-rose-300 border border-rose-800 font-bold animate-pulse">ĐÃ BỊ KHÓA</span>`;
+
+                    const roleBadge = u.roles.includes('Admin')
+                        ? `<span class="px-2 py-0.5 rounded text-[10px] bg-purple-950 text-purple-300 border border-purple-800 font-bold">Admin</span>`
+                        : (u.roles.includes('NhanVien')
+                            ? `<span class="px-2 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-800 font-bold">Nhân Viên</span>`
+                            : `<span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">Khách Hàng</span>`);
+
+                    const createdStr = formatVnDateTime(u.createdAt, false);
+                    const lastLoginStr = formatVnDateTime(u.lastLoginAt, false);
+
+                    let actionBtn = '';
+                    if (isSelf) {
+                        actionBtn = `<span class="text-slate-500 font-mono text-[10px]">(Tài khoản hiện tại)</span>`;
+                    } else if (u.isActive) {
+                        actionBtn = `<button onclick="toggleUserStatus(${u.id})" class="px-3 py-1 rounded-lg bg-rose-950 hover:bg-rose-900 text-xs text-rose-300 border border-rose-800 transition font-bold flex items-center space-x-1 ml-auto"><i class="fa-solid fa-lock"></i><span>Khóa tài khoản</span></button>`;
+                    } else {
+                        actionBtn = `<button onclick="toggleUserStatus(${u.id})" class="px-3 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-xs text-emerald-300 border border-emerald-800 transition font-bold flex items-center space-x-1 ml-auto"><i class="fa-solid fa-lock-open"></i><span>Mở khóa</span></button>`;
+                    }
+
+                    return `
+                        <tr class="hover:bg-slate-900/60 transition">
+                            <td class="py-3 px-3 font-mono text-slate-500">#${u.id}</td>
+                            <td class="py-3 px-3 font-bold text-white font-mono">${u.username}</td>
+                            <td class="py-3 px-3">
+                                <div class="text-white">${u.fullName || 'N/A'}</div>
+                                <div class="text-[10px] text-slate-400 font-mono">${u.email}</div>
+                            </td>
+                            <td class="py-3 px-3">${roleBadge}</td>
+                            <td class="py-3 px-3 font-mono text-[11px] text-slate-300 whitespace-nowrap">${createdStr}</td>
+                            <td class="py-3 px-3 font-mono text-[11px] text-cyan-300 whitespace-nowrap">${lastLoginStr}</td>
+                            <td class="py-3 px-3 font-mono text-center font-bold ${u.failedLoginAttempts > 0 ? 'text-rose-400' : 'text-slate-500'}">${u.failedLoginAttempts}</td>
+                            <td class="py-3 px-3">${statusBadge}</td>
+                            <td class="py-3 px-3 text-right">${actionBtn}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        async function toggleUserStatus(userId) {
+            const res = await callApi(`/api/admin/users/${userId}/toggle-status`, 'PUT');
+            if (res.ok && res.data) {
+                alert(res.data.message);
+                fetchSocData();
+            } else {
+                alert(`Lỗi: ${res.data?.message || 'Không thể thay đổi trạng thái tài khoản'}`);
+            }
+        }
+
+        async function clearSecurityLogs() {
+            if (!confirm('Bạn có chắc chắn muốn làm sạch toàn bộ nhật ký an ninh hệ thống?')) return;
+            const res = await callApi('/api/admin/security-logs', 'DELETE');
+            if (res.ok) {
+                fetchSocData();
+            }
+        }
+
+        async function testBolaAttack() {
+            // Khách hàng mới cố tình đọc trộm đơn hàng nội bộ #1 (thuộc quyền sở hữu của Admin)
+            const res = await callApi('/api/orders/1', 'GET');
+            if (res.status === 403) {
+                triggerSecurityModal(
+                    "HTTP 403 BOLA / IDOR VIOLATION",
+                    res.data?.message || "🛡️ [PHÒNG THỦ BOLA KÍCH HOẠT]: Bạn không có quyền truy cập vào đơn hàng của khách hàng khác!",
+                    `Chi tiết: ${res.data?.detail || 'Hành vi vi phạm đã được ghi nhận và gửi đến Trung tâm Giám sát SOC của Admin để xem xét khóa tài khoản!'}`
+                );
+            } else if (res.ok) {
+                alert(`Đọc được đơn hàng: ${JSON.stringify(res.data)}`);
+            } else {
+                handleApiSecurityError(res);
+            }
+        }
+
+        // ================= CORE API CLIENT & LIVE PACKET INSPECTOR =================
+        async function callApi(url, method, body = null) {
+            const token = currentAuthData ? currentAuthData.token : null;
+            const headers = { 'Accept': 'application/json' };
+            if (body) {
+                headers['Content-Type'] = 'application/json';
+            }
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const startTime = performance.now();
+            let response, data, status, statusText;
+
+            try {
+                response = await fetch(url, {
+                    method: method,
+                    headers: headers,
+                    body: body ? JSON.stringify(body) : null
+                });
+                status = response.status;
+                statusText = response.statusText;
+                data = await response.json().catch(() => null);
+            } catch (err) {
+                status = 0;
+                statusText = "Network Error";
+                data = { error: err.message };
+            }
+
+            const durationMs = Math.round(performance.now() - startTime);
+
+            // Log Packet to Inspector Drawer
+            logPacketToInspector({
+                method,
+                url,
+                status,
+                statusText,
+                durationMs,
+                requestHeaders: headers,
+                requestBody: body,
+                responseBody: data
+            });
+
+            return {
+                ok: status >= 200 && status < 300,
+                status,
+                statusText,
+                data,
+                url
+            };
+        }
+
+        function logPacketToInspector(p) {
+            const container = document.getElementById('inspectorLogs');
+            if (!container) return;
+            const emptyState = document.getElementById('emptyInspectorState');
+            if (emptyState) emptyState.remove();
+
+            packetCount++;
+            document.getElementById('packetCounter').textContent = `${packetCount} gói tin`;
+
+            let statusBadge = '';
+            if (p.status >= 200 && p.status < 300) {
+                statusBadge = `<span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-emerald-950 text-emerald-300 border border-emerald-800">${p.status} ${p.statusText || 'OK'}</span>`;
+            } else if (p.status === 400) {
+                statusBadge = `<span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-amber-950 text-amber-300 border border-amber-800">${p.status} Bad Request</span>`;
+            } else if (p.status === 401) {
+                statusBadge = `<span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-rose-950 text-rose-300 border border-rose-800">${p.status} Unauthorized</span>`;
+            } else if (p.status === 403) {
+                statusBadge = `<span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-purple-950 text-purple-300 border border-purple-800">${p.status} Forbidden</span>`;
+            } else {
+                statusBadge = `<span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-slate-800 text-slate-300">${p.status}</span>`;
+            }
+
+            const timeNow = new Date().toLocaleTimeString();
+            const logItem = document.createElement('div');
+            logItem.className = "p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono space-y-2 animate-fadeIn";
+
+            logItem.innerHTML = `
+                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="px-1.5 py-0.5 rounded bg-cyan-900 text-cyan-200 font-bold">${p.method}</span>
+                        <span class="text-slate-200 font-bold text-[11px] truncate max-w-[200px]" title="${p.url}">${p.url}</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5">
+                        ${statusBadge}
+                        <span class="text-[10px] text-slate-500">${p.durationMs}ms</span>
+                    </div>
+                </div>
+
+                <div class="space-y-1 text-[11px]">
+                    <div class="text-slate-400 font-bold flex items-center">
+                        <i class="fa-solid fa-arrow-up text-cyan-400 mr-1.5"></i>HTTP REQUEST:
+                    </div>
+                    <div class="pl-2.5 text-slate-400 border-l border-slate-800">
+                        ${p.requestHeaders.Authorization ? `<div class="text-amber-300 truncate font-semibold" title="${p.requestHeaders.Authorization}">Authorization: ${p.requestHeaders.Authorization}</div>` : `<div class="text-slate-500 italic">Authorization: (Anonymous)</div>`}
+                        ${p.requestBody ? `<div class="text-slate-300 mt-1"><span class="text-slate-500">Body:</span> ${JSON.stringify(p.requestBody)}</div>` : ''}
+                    </div>
+                </div>
+
+                <div class="space-y-1 text-[11px] pt-1">
+                    <div class="text-slate-400 font-bold flex items-center">
+                        <i class="fa-solid fa-arrow-down text-emerald-400 mr-1.5"></i>HTTP RESPONSE:
+                    </div>
+                    <div class="pl-2.5 border-l border-slate-800 overflow-x-auto custom-scrollbar max-h-36">
+                        <pre class="text-emerald-300/90 whitespace-pre-wrap">${p.responseBody ? JSON.stringify(p.responseBody, null, 2) : '(Trống)'}</pre>
+                    </div>
+                </div>
+            `;
+
+            container.insertBefore(logItem, container.firstChild);
+        }
+
+        function clearInspectorLogs() {
+            const container = document.getElementById('inspectorLogs');
+            if (!container) return;
+            packetCount = 0;
+            document.getElementById('packetCounter').textContent = `0 gói tin`;
+            container.innerHTML = `
+                <div id="emptyInspectorState" class="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                    <i class="fa-solid fa-network-wired text-3xl mb-2.5 text-slate-600"></i>
+                    <p class="font-medium text-slate-400 text-xs">Chưa có gói tin nào được ghi nhận</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
