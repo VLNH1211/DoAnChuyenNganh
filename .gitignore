@@ -21,6 +21,10 @@ publish/
 *.7z
 *.rar
 
+# Documents & Reports
+*.docx
+*.pdf
+
 # But keep any essential scripts if needed
 !*.bat
 !*.ps1
