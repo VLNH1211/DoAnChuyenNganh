@@ -1345,12 +1345,25 @@
             }
         }
 
-        function handleLogout() {
+        async function handleLogout() {
+            if (currentAuthData && currentAuthData.token) {
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${currentAuthData.token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                } catch (err) {
+                    console.warn('Lỗi thu hồi token trên server:', err);
+                }
+            }
             sessionStorage.removeItem('TECHSEC_AUTH');
             currentAuthData = null;
             updateAuthUI();
             renderProductsGrid();
-            showAuthAlert('info', 'Bạn đã đăng xuất.');
+            showAuthAlert('info', 'Bạn đã đăng xuất an toàn (Mã Token đã bị thu hồi trên Server).');
         }
 
         function updateAuthUI() {

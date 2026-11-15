@@ -1,8 +1,11 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using EcommerceSecurityApi.DTOs.Auth;
+using EcommerceSecurityApi.Helpers;
 using EcommerceSecurityApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EcommerceSecurityApi.Controllers;
 
@@ -11,19 +14,28 @@ namespace EcommerceSecurityApi.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ITokenBlacklistService _tokenBlacklistService;
+    private readonly ISecurityLogService _securityLogService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(
+        IAuthService authService,
+        ITokenBlacklistService tokenBlacklistService,
+        ISecurityLogService securityLogService)
     {
         _authService = authService;
+        _tokenBlacklistService = tokenBlacklistService;
+        _securityLogService = securityLogService;
     }
 
     /// <summary>
-    /// API Đăng nhập hệ thống (Cấp phát mã JWT Token)
+    /// API Đăng nhập hệ thống (Cấp phát mã JWT Token - Chống Brute-force bằng Rate Limiting 5 lần/phút)
     /// </summary>
     [HttpPost("login")]
+    [EnableRateLimiting("LoginLimit")]
     [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         var (success, message, data) = await _authService.LoginAsync(request);
@@ -95,6 +107,56 @@ public class AuthController : ControllerBase
             success = true,
             message = "Xác thực danh tính thành công qua JWT Claims.",
             user = userInfo
+        });
+    }
+
+    /// <summary>
+    /// API Đăng xuất - Thu hồi mã JWT Token hiện tại (Chống Replay Attack & Chiếm quyền phiên - OWASP API2:2023)
+    /// </summary>
+    [Authorize]
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Logout()
+    {
+        var jti = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value
+                  ?? User.FindFirst("jti")?.Value;
+
+        DateTime? expiresAt = null;
+        var expClaim = User.FindFirst(JwtRegisteredClaimNames.Exp)?.Value
+                       ?? User.FindFirst("exp")?.Value;
+        if (long.TryParse(expClaim, out long expSeconds))
+        {
+            expiresAt = DateTimeOffset.FromUnixTimeSeconds(expSeconds).UtcDateTime;
+        }
+
+        if (!string.IsNullOrEmpty(jti))
+        {
+            _tokenBlacklistService.RevokeToken(jti, expiresAt);
+        }
+
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        int? userId = int.TryParse(userIdStr, out int uid) ? uid : null;
+        var username = User.Identity?.Name ?? (userId.HasValue ? $"User_{userId}" : "Anonymous");
+        var clientIp = ClientInfoHelper.GetClientIpAddress(HttpContext);
+
+        await _securityLogService.LogIncidentAsync(
+            incidentType: "USER_LOGOUT",
+            severity: "Info",
+            description: $"Người dùng '{username}' (ID: {userId}) đã thực hiện đăng xuất an toàn. Mã JWT Token (JTI: {jti}) đã được đưa vào danh sách thu hồi (Blacklist).",
+            targetResource: "POST /api/auth/logout",
+            userId: userId,
+            username: username,
+            ipAddress: clientIp
+        );
+
+        return Ok(new
+        {
+            success = true,
+            statusCode = StatusCodes.Status200OK,
+            message = "Đăng xuất thành công! Token xác thực của bạn đã bị thu hồi an toàn.",
+            revokedJti = jti,
+            timestamp = DateTime.UtcNow
         });
     }
 

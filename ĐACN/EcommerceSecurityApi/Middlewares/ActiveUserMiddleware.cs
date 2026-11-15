@@ -1,6 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
 using EcommerceSecurityApi.Data;
+using EcommerceSecurityApi.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcommerceSecurityApi.Middlewares;
@@ -14,14 +16,36 @@ public class ActiveUserMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext)
+    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, ITokenBlacklistService blacklistService)
     {
         if (context.User.Identity?.IsAuthenticated == true)
         {
+            // 1. Kiểm tra Token Blacklist (OWASP API2: Chống sử dụng lại Token đã Đăng xuất / Revoke)
+            var jti = context.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value
+                      ?? context.User.FindFirst("jti")?.Value;
+
+            if (!string.IsNullOrEmpty(jti) && blacklistService.IsTokenRevoked(jti))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                var revokedObj = new
+                {
+                    success = false,
+                    statusCode = StatusCodes.Status401Unauthorized,
+                    error = "TOKEN_REVOKED",
+                    message = "🛡️ [PHIÊN ĐĂNG NHẬP ĐÃ HẾT HIỆU LỰC]: Mã JWT Token này đã bị thu hồi do người dùng đã đăng xuất khỏi hệ thống. Vui lòng đăng nhập lại!",
+                    timestamp = DateTime.UtcNow
+                };
+
+                await context.Response.WriteAsync(JsonSerializer.Serialize(revokedObj));
+                return;
+            }
+
+            // 2. Kiểm tra cờ IsActive của tài khoản trong Database
             var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (int.TryParse(userIdClaim, out int userId))
             {
-                // Truy vấn nhanh cờ IsActive của tài khoản
                 var isActive = await dbContext.Users
                     .Where(u => u.Id == userId)
                     .Select(u => (bool?)u.IsActive)

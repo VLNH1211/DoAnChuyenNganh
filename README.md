@@ -160,4 +160,57 @@ Hệ thống được thiết kế với 5 kịch bản thực nghiệm đối c
   1. Gửi body JSON đặt hàng với giá cố tình chỉnh sửa thành 0 đồng.
 - **Kết quả phòng thủ:**
   - `OrdersController.cs` không sử dụng giá do client gửi lên. Máy chủ truy vấn giá gốc niêm yết trong bảng `Products` từ cơ sở dữ liệu và tính toán lại `TotalAmount = UnitPrice * Quantity`.
-  - Giá trị đơn hàng được bảo vệ nguyên vẹn theo đúng giá niêm yết của cửa hàng.
+  - Bọc trong Database Transaction và gộp nhóm `ProductId` trùng lặp để bảo vệ toàn vẹn kho hàng.
+
+---
+
+### 🔹 Kịch bản 6: Phòng thủ Brute-Force & Spam API bằng Rate Limiting (OWASP API4:2023)
+- **Tình huống:** Kẻ tấn công sử dụng công cụ tự động gửi hàng loạt yêu cầu dò mật khẩu đăng nhập (`POST /api/auth/login`) hoặc spam tạo đơn hàng (`POST /api/orders`).
+- **Thao tác thực hiện:**
+  1. Gửi liên tiếp $> 5$ yêu cầu đăng nhập sai trong vòng 60 giây từ cùng một địa chỉ IP.
+- **Kết quả phòng thủ:**
+  - `System.Threading.RateLimiting` của ASP.NET Core 8.0 kích hoạt chốt chặn với mã **`HTTP 429 Too Many Requests`**.
+  - Header `Retry-After: 60` được trả về kèm JSON thông báo lỗi chuẩn xác.
+  - Tự động ghi nhận cảnh báo an ninh mức độ **`Critical`** (`RATE_LIMIT_EXCEEDED`) lên Trung tâm SOC.
+
+---
+
+### 🔹 Kịch bản 7: Thu hồi mã JWT Token khi Đăng xuất (Token Revocation - OWASP API2:2023)
+- **Tình huống:** Kẻ tấn công nghe lén hoặc đánh cắp chuỗi JWT Token sau khi người dùng đã nhấn Đăng xuất trên trình duyệt và cố gắng tái sử dụng (Replay Attack).
+- **Thao tác thực hiện:**
+  1. Người dùng thực hiện Đăng xuất (`POST /api/auth/logout`).
+  2. Kẻ tấn công sử dụng lại mã Token cũ đó để gọi `GET /api/auth/me`.
+- **Kết quả phòng thủ:**
+  - `TokenBlacklistService` lưu định danh `jti` của Token vào bộ nhớ tạm thời (`IMemoryCache`) cho đến khi Token tự nhiên hết hạn.
+  - `ActiveUserMiddleware` kiểm tra danh sách Blacklist và lập tức trả mã **`HTTP 401 Unauthorized`** (`TOKEN_REVOKED`), vô hiệu hóa hoàn toàn Token đã bị thu hồi.
+
+---
+
+### 🔹 Kịch bản 8: Hardening Pipeline & Chống rò rỉ thông tin máy chủ (OWASP API8:2023)
+- **Tình huống:** Kẻ tấn công thăm dò thông tin hệ điều hành, phiên bản Web Server qua HTTP Response Headers hoặc cố tình truyền dữ liệu lỗi để kích hoạt Crash/Stack Trace.
+- **Kết quả phòng thủ:**
+  - `SecurityHeadersMiddleware` gỡ bỏ hoàn toàn header `Server: Kestrel` và `X-Powered-By`.
+  - Tự động tiêm các Security Headers chuẩn quốc tế: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store` cho toàn bộ endpoint `/api/*`.
+  - `GlobalExceptionHandler` (chuẩn .NET 8 `IExceptionHandler`) bắt mọi ngoại lệ chưa xử lý, ghi vết nội bộ bằng `TraceIdentifier` và chỉ trả về mã `HTTP 500` an toàn, triệt tiêu nguy cơ lộ Stack Trace và cấu trúc cơ sở dữ liệu.
+
+---
+
+## 🧪 4. Bộ kiểm thử an ninh tự động (Automated Security Testing Suite)
+
+Dự án tích hợp bộ kiểm thử tích hợp tự động độc lập tại thư mục `EcommerceSecurityApi.Tests` sử dụng **xUnit**, **Microsoft.AspNetCore.Mvc.Testing** (`WebApplicationFactory<Program>`) và **EF Core InMemory Database**:
+
+```powershell
+cd ĐACN
+dotnet test
+```
+
+### Kết quả kiểm thử an ninh (100% Passed):
+- ✅ `Test1_BOLA_GetOtherUserOrder_Returns403_AndCreatesCriticalSecurityLog` (OWASP API1)
+- ✅ `Test2_BFLA_CustomerAccessAdminEndpoint_Returns403_AndCreatesSecurityLog` (OWASP API5)
+- ✅ `Test3_BFLA_StaffDeleteProduct_Returns403_AndCreatesSecurityLog` (OWASP API5)
+- ✅ `Test4_DataTampering_CreateOrder_UsesServerProductPrice_IgnoresTamperedInput` (OWASP API3)
+- ✅ `Test5_AccountSuspension_LockedUserWithValidToken_BlockedImmediatelyWith403` (SOC Defense)
+- ✅ `Test6_TokenRevocation_AfterLogout_TokenIsRejectedWith401` (OWASP API2)
+- ✅ `Test7_RateLimiting_LoginBruteForce_ExceedingThreshold_Returns429` (OWASP API4)
+- ✅ `Test8_SecurityHeaders_ApiResponse_ContainsDefensiveHeaders` (OWASP API8)
+

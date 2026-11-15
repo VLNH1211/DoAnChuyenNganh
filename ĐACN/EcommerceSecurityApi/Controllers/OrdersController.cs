@@ -5,6 +5,7 @@ using EcommerceSecurityApi.Entities;
 using EcommerceSecurityApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcommerceSecurityApi.Controllers;
@@ -26,12 +27,14 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
-    /// Đặt mua sản phẩm công nghệ mới (Chống Price Tampering: Giá được lấy trực tiếp từ Database)
+    /// Đặt mua sản phẩm công nghệ mới (Chống Price Tampering & Chống Spam đơn hàng bằng Rate Limiting 10 lần/phút)
     /// </summary>
     [HttpPost]
+    [EnableRateLimiting("OrderLimit")]
     [ProducesResponseType(typeof(OrderResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto request)
     {
         if (!ModelState.IsValid)
@@ -56,7 +59,23 @@ public class OrdersController : ControllerBase
             return BadRequest(new { success = false, message = "Đơn hàng phải chứa ít nhất một sản phẩm công nghệ." });
         }
 
-        var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
+        // 1. Kiểm tra tính hợp lệ của số lượng từng món (chống số lượng âm hoặc bằng 0)
+        if (request.Items.Any(i => i.Quantity <= 0))
+        {
+            return BadRequest(new { success = false, message = "Số lượng của mỗi sản phẩm trong đơn hàng phải lớn hơn 0." });
+        }
+
+        // 2. Gộp nhóm các item trùng ProductId (OWASP API6: Chống lách kiểm tra tồn kho bằng cách chia nhỏ item trùng lặp)
+        var aggregatedItems = request.Items
+            .GroupBy(i => i.ProductId)
+            .Select(g => new
+            {
+                ProductId = g.Key,
+                TotalQuantity = g.Sum(x => x.Quantity)
+            })
+            .ToList();
+
+        var productIds = aggregatedItems.Select(i => i.ProductId).ToList();
         var products = await _context.Products.Where(p => productIds.Contains(p.Id)).ToListAsync();
 
         if (products.Count != productIds.Count)
@@ -64,67 +83,97 @@ public class OrdersController : ControllerBase
             return BadRequest(new { success = false, message = "Một số sản phẩm trong giỏ hàng không tồn tại." });
         }
 
-        // Kiểm tra tồn kho và tính toán tổng tiền từ giá niêm yết trong Database (chống giả mạo giá client)
-        decimal totalAmount = 0;
-        var orderItems = new List<OrderItem>();
-
-        foreach (var item in request.Items)
+        // 3. Thực thi trong Database Transaction đảm bảo tính toàn vẹn dữ liệu (Atomicity & Isolation)
+        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+        if (_context.Database.IsRelational())
         {
-            var product = products.First(p => p.Id == item.ProductId);
+            transaction = await _context.Database.BeginTransactionAsync();
+        }
 
-            if (product.Stock < item.Quantity)
+        try
+        {
+            decimal totalAmount = 0;
+            var orderItems = new List<OrderItem>();
+
+            foreach (var item in aggregatedItems)
             {
-                return BadRequest(new
+                var product = products.First(p => p.Id == item.ProductId);
+
+                if (product.Stock < item.TotalQuantity)
                 {
-                    success = false,
-                    message = $"Sản phẩm '{product.Name}' chỉ còn {product.Stock} món trong kho, không đủ đáp ứng số lượng {item.Quantity} món."
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = $"Sản phẩm '{product.Name}' chỉ còn {product.Stock} món trong kho, không đủ đáp ứng tổng số lượng yêu cầu {item.TotalQuantity} món."
+                    });
+                }
+
+                // Trừ tồn kho từ giá trị niêm yết
+                product.Stock -= item.TotalQuantity;
+
+                var itemTotalPrice = product.Price * item.TotalQuantity;
+                totalAmount += itemTotalPrice;
+
+                orderItems.Add(new OrderItem
+                {
+                    ProductId = product.Id,
+                    Quantity = item.TotalQuantity,
+                    UnitPrice = product.Price,
+                    TotalPrice = itemTotalPrice
                 });
             }
 
-            // Trừ tồn kho
-            product.Stock -= item.Quantity;
+            var orderCode = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
 
-            var itemTotalPrice = product.Price * item.Quantity;
-            totalAmount += itemTotalPrice;
-
-            orderItems.Add(new OrderItem
+            var order = new Order
             {
-                ProductId = product.Id,
-                Quantity = item.Quantity,
-                UnitPrice = product.Price,
-                TotalPrice = itemTotalPrice
+                OrderCode = orderCode,
+                UserId = userId,
+                CustomerName = string.IsNullOrWhiteSpace(request.CustomerName) ? (user.FullName ?? user.Username) : request.CustomerName.Trim(),
+                PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? (user.PhoneNumber ?? "0900000000") : request.PhoneNumber.Trim(),
+                ShippingAddress = request.ShippingAddress.Trim(),
+                Notes = request.Notes?.Trim(),
+                TotalAmount = totalAmount,
+                Status = "Pending",
+                OrderDate = DateTime.UtcNow,
+                OrderItems = orderItems
+            };
+
+            await _context.Orders.AddAsync(order);
+            await _context.SaveChangesAsync();
+
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
+
+            _logger.LogInformation("Người dùng {User} (ID: {UserId}) đã đặt thành công đơn hàng {OrderCode} trị giá {Total:N0}đ.", user.Username, userId, order.OrderCode, totalAmount);
+
+            var response = await MapToOrderResponseDto(order.Id);
+
+            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, new
+            {
+                success = true,
+                message = "Đặt mua sản phẩm công nghệ thành công! Đơn hàng của bạn đang được xử lý.",
+                order = response
             });
         }
-
-        var orderCode = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
-
-        var order = new Order
+        catch (Exception ex)
         {
-            OrderCode = orderCode,
-            UserId = userId,
-            CustomerName = string.IsNullOrWhiteSpace(request.CustomerName) ? (user.FullName ?? user.Username) : request.CustomerName.Trim(),
-            PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? (user.PhoneNumber ?? "0900000000") : request.PhoneNumber.Trim(),
-            ShippingAddress = request.ShippingAddress.Trim(),
-            Notes = request.Notes?.Trim(),
-            TotalAmount = totalAmount,
-            Status = "Pending",
-            OrderDate = DateTime.UtcNow,
-            OrderItems = orderItems
-        };
-
-        await _context.Orders.AddAsync(order);
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Người dùng {User} (ID: {UserId}) đã đặt thành công đơn hàng {OrderCode} trị giá {Total:N0}đ.", user.Username, userId, order.OrderCode, totalAmount);
-
-        var response = await MapToOrderResponseDto(order.Id);
-
-        return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, new
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync();
+            }
+            _logger.LogError(ex, "Lỗi xảy ra trong quá trình tạo đơn hàng.");
+            return StatusCode(StatusCodes.Status500InternalServerError, new { success = false, message = "Đã xảy ra lỗi hệ thống khi xử lý đơn hàng. Vui lòng thử lại sau." });
+        }
+        finally
         {
-            success = true,
-            message = "Đặt mua sản phẩm công nghệ thành công! Đơn hàng của bạn đang được xử lý.",
-            order = response
-        });
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
     }
 
     /// <summary>
@@ -342,8 +391,62 @@ public class OrdersController : ControllerBase
             return NotFound(new { success = false, message = $"Không tìm thấy đơn hàng ID {id}." });
         }
 
-        var oldStatus = order.Status;
-        order.Status = request.Status;
+        var oldStatus = order.Status ?? "Pending";
+        var newStatus = request.Status?.Trim() ?? string.Empty;
+
+        if (string.Equals(oldStatus, newStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            return Ok(new
+            {
+                success = true,
+                message = $"Đơn hàng {order.OrderCode} hiện đã ở trạng thái '{order.Status}'.",
+                orderId = order.Id,
+                newStatus = order.Status
+            });
+        }
+
+        // Kiểm tra State Machine hợp lệ (OWASP API6: Chống lạm dụng luồng nghiệp vụ đơn hàng)
+        bool isValidTransition = false;
+        if (oldStatus.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+        {
+            isValidTransition = newStatus.Equals("Processing", StringComparison.OrdinalIgnoreCase) ||
+                                newStatus.Equals("Cancelled", StringComparison.OrdinalIgnoreCase);
+        }
+        else if (oldStatus.Equals("Processing", StringComparison.OrdinalIgnoreCase))
+        {
+            isValidTransition = newStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase) ||
+                                newStatus.Equals("Cancelled", StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (!isValidTransition)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                statusCode = StatusCodes.Status400BadRequest,
+                error = "INVALID_STATUS_TRANSITION",
+                message = $"Quy trình nghiệp vụ không hợp lệ: Không thể chuyển đơn hàng từ trạng thái '{oldStatus}' sang '{newStatus}'. Đơn hàng đã 'Completed' hoặc 'Cancelled' là trạng thái kết thúc không thể hoàn tác."
+            });
+        }
+
+        // Nếu chuyển sang Cancelled: Hoàn lại số lượng tồn kho sản phẩm
+        if (newStatus.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
+        {
+            var orderItems = await _context.OrderItems.Where(oi => oi.OrderId == id).ToListAsync();
+            var pIds = orderItems.Select(oi => oi.ProductId).ToList();
+            var orderProducts = await _context.Products.Where(p => pIds.Contains(p.Id)).ToListAsync();
+
+            foreach (var item in orderItems)
+            {
+                var prod = orderProducts.FirstOrDefault(p => p.Id == item.ProductId);
+                if (prod != null)
+                {
+                    prod.Stock += item.Quantity;
+                }
+            }
+        }
+
+        order.Status = newStatus;
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Người dùng {User} đã chuyển trạng thái đơn hàng {OrderCode} từ '{Old}' sang '{New}'.",
