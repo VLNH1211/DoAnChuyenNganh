@@ -16,9 +16,27 @@ var builder = WebApplication.CreateBuilder(args);
 // 0. Hardening Kestrel Web Server (Tắt Server header tiết lộ công nghệ - OWASP API8)
 builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
-// 1. Cấu hình DbContext kết nối SQL Server LocalDB
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Hỗ trợ tự động đọc cổng PORT từ môi trường Cloud (Render, Railway, Docker)
+var cloudPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(cloudPort))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{cloudPort}");
+}
+
+// 1. Cấu hình DbContext linh hoạt: SQL Server LocalDB (mặc định trên máy Local) hoặc SQLite (khi Deploy trên Render Linux)
+var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
+if (databaseProvider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+{
+    var sqliteConn = builder.Configuration.GetConnectionString("SqliteConnection")
+                     ?? $"Data Source={Path.Combine(Path.GetTempPath(), "ecommerce_security.db")}";
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlite(sqliteConn));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+}
 
 // 2. Đăng ký các dịch vụ Dependency Injection (DI)
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -161,9 +179,14 @@ builder.Services.AddRateLimiter(options =>
             });
     });
 
-    // Global Limiter: 100 requests / 60s theo IP để phòng chống DDoS/crawler spam
+    // Global Limiter: 100 requests / 60s theo IP để phòng chống DDoS/crawler spam (miễn trừ /health cho Render/UptimeRobot)
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
     {
+        if (httpContext.Request.Path.Equals("/health", StringComparison.OrdinalIgnoreCase))
+        {
+            return RateLimitPartition.GetNoLimiter("health_check");
+        }
+
         var clientIp = ClientInfoHelper.GetClientIpAddress(httpContext);
         return RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: $"global_{clientIp}",
@@ -337,6 +360,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.UseMiddleware<EcommerceSecurityApi.Middlewares.ActiveUserMiddleware>();
+
+// Endpoint kiểm tra sức khỏe phục vụ Render Health Check & Cron-job/UptimeRobot ping 24/7
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "healthy",
+    service = "TechSec Gear API",
+    provider = databaseProvider,
+    timestamp = DateTime.UtcNow
+})).DisableRateLimiting();
 
 app.MapControllers();
 

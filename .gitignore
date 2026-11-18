@@ -33,6 +33,11 @@ publish/
 logs/
 *.log
 
+## SQLite local databases
+*.db
+*.db-shm
+*.db-wal
+
 ## OS generated files
 .DS_Store
 Thumbs.db

@@ -9,13 +9,16 @@ public static class DbInitializer
     {
         // 1. Khởi tạo cấu trúc database và các bảng nếu chưa có
         await context.Database.EnsureCreatedAsync();
-        try
+        if (context.Database.IsSqlServer())
         {
-            await context.Database.ExecuteSqlRawAsync("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Users]') AND name = 'LastLoginAt') ALTER TABLE [Users] ADD [LastLoginAt] DATETIME2 NULL;");
-        }
-        catch
-        {
-            // Bỏ qua nếu bảng đã đủ cấu trúc hoặc quyền DDL hạn chế
+            try
+            {
+                await context.Database.ExecuteSqlRawAsync("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Users]') AND name = 'LastLoginAt') ALTER TABLE [Users] ADD [LastLoginAt] DATETIME2 NULL;");
+            }
+            catch
+            {
+                // Bỏ qua nếu bảng đã đủ cấu trúc hoặc quyền DDL hạn chế
+            }
         }
 
         // 2. Seed Roles

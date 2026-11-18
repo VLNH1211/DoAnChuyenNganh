@@ -120,5 +120,20 @@ public class AppDbContext : DbContext
                   .HasForeignKey(oi => oi.ProductId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
+
+        // Hỗ trợ SQLite xử lý OrderBy / Sum trên kiểu decimal khi deploy lên Linux/Render
+        if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var decimalProperties = entityType.ClrType.GetProperties()
+                    .Where(p => p.PropertyType == typeof(decimal) || p.PropertyType == typeof(decimal?));
+
+                foreach (var property in decimalProperties)
+                {
+                    modelBuilder.Entity(entityType.Name).Property(property.Name).HasConversion<double>();
+                }
+            }
+        }
     }
 }
