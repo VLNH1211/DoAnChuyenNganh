@@ -361,8 +361,8 @@ app.UseAuthorization();
 app.UseRateLimiter();
 app.UseMiddleware<EcommerceSecurityApi.Middlewares.ActiveUserMiddleware>();
 
-// Endpoint kiểm tra sức khỏe phục vụ Render Health Check & Cron-job/UptimeRobot ping 24/7
-app.MapGet("/health", () => Results.Ok(new
+// Endpoint kiểm tra sức khỏe phục vụ Render Health Check & Cron-job/UptimeRobot (hỗ trợ cả GET và HEAD)
+app.MapMethods("/health", new[] { "GET", "HEAD" }, () => Results.Ok(new
 {
     status = "healthy",
     service = "TechSec Gear API",
