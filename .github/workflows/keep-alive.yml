@@ -1,0 +1,25 @@
+name: Keep Render Web Alive 24/7
+
+on:
+  schedule:
+    # Tự động chạy mỗi 10 phút để giữ Render Web Service không bao giờ ngủ đông
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Cho phép bấm chạy thủ công ngay lập tức trên tab Actions của GitHub
+
+jobs:
+  ping-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping TechSec Gear API Health Endpoint
+        run: |
+          TARGET_URL="https://doanchuyennganh-vml3.onrender.com/health"
+          echo "Pinging $TARGET_URL at $(date -u)"
+          HTTP_STATUS=$(curl -s -o /tmp/health.json -w "%{http_code}" --max-time 60 "$TARGET_URL")
+          echo "HTTP Status: $HTTP_STATUS"
+          cat /tmp/health.json
+          echo ""
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Health check failed with status $HTTP_STATUS"
+            exit 1
+          fi
+          echo "Service is healthy and awake!"
