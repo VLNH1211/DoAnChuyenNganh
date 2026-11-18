@@ -51,7 +51,25 @@ public class ActiveUserMiddleware
                     .Select(u => (bool?)u.IsActive)
                     .FirstOrDefaultAsync();
 
-                if (isActive.HasValue && !isActive.Value)
+                if (!isActive.HasValue)
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    context.Response.ContentType = "application/json";
+
+                    var deletedObj = new
+                    {
+                        success = false,
+                        statusCode = StatusCodes.Status401Unauthorized,
+                        error = "ACCOUNT_DELETED",
+                        message = "🛡️ [TÀI KHOẢN KHÔNG TỒN TẠI]: Tài khoản này đã bị Quản trị viên xóa khỏi hệ thống!",
+                        timestamp = DateTime.UtcNow
+                    };
+
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(deletedObj));
+                    return;
+                }
+
+                if (!isActive.Value)
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     context.Response.ContentType = "application/json";

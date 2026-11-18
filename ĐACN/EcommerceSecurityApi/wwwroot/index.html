@@ -1589,10 +1589,13 @@
                     let actionBtn = '';
                     if (isSelf) {
                         actionBtn = `<span class="text-slate-500 font-mono text-[10px]">(Tài khoản hiện tại)</span>`;
-                    } else if (u.isActive) {
-                        actionBtn = `<button onclick="toggleUserStatus(${u.id})" class="px-3 py-1 rounded-lg bg-rose-950 hover:bg-rose-900 text-xs text-rose-300 border border-rose-800 transition font-bold flex items-center space-x-1 ml-auto"><i class="fa-solid fa-lock"></i><span>Khóa tài khoản</span></button>`;
                     } else {
-                        actionBtn = `<button onclick="toggleUserStatus(${u.id})" class="px-3 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-xs text-emerald-300 border border-emerald-800 transition font-bold flex items-center space-x-1 ml-auto"><i class="fa-solid fa-lock-open"></i><span>Mở khóa</span></button>`;
+                        const safeUsername = String(u.username || '').replace(/'/g, "\\'");
+                        const toggleBtn = u.isActive
+                            ? `<button onclick="toggleUserStatus(${u.id})" class="px-3 py-1 rounded-lg bg-rose-950 hover:bg-rose-900 text-xs text-rose-300 border border-rose-800 transition font-bold flex items-center space-x-1"><i class="fa-solid fa-lock"></i><span>Khóa tài khoản</span></button>`
+                            : `<button onclick="toggleUserStatus(${u.id})" class="px-3 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-xs text-emerald-300 border border-emerald-800 transition font-bold flex items-center space-x-1"><i class="fa-solid fa-lock-open"></i><span>Mở khóa</span></button>`;
+                        const deleteBtn = `<button onclick="deleteUser(${u.id}, '${safeUsername}')" title="Xóa vĩnh viễn tài khoản" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-red-700 text-xs text-red-400 hover:text-white border border-slate-700 hover:border-red-600 transition font-bold flex items-center space-x-1"><i class="fa-solid fa-trash-can"></i><span>Xóa</span></button>`;
+                        actionBtn = `<div class="flex items-center justify-end space-x-2">${toggleBtn}${deleteBtn}</div>`;
                     }
 
                     return `
@@ -1622,6 +1625,19 @@
                 fetchSocData();
             } else {
                 alert(`Lỗi: ${res.data?.message || 'Không thể thay đổi trạng thái tài khoản'}`);
+            }
+        }
+
+        async function deleteUser(userId, username) {
+            if (!confirm(`⚠️ Bạn có chắc chắn muốn XÓA VĨNH VIỄN tài khoản '${username}' (#${userId}) và các đơn hàng liên quan không?\n\nHành động này không thể hoàn tác!`)) {
+                return;
+            }
+            const res = await callApi(`/api/admin/users/${userId}`, 'DELETE');
+            if (res.ok && res.data) {
+                alert(res.data.message);
+                fetchSocData();
+            } else {
+                alert(`Lỗi: ${res.data?.message || 'Không thể xóa tài khoản'}`);
             }
         }
 

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using EcommerceSecurityApi.Data;
 using EcommerceSecurityApi.DTOs.Admin;
+using EcommerceSecurityApi.Helpers;
 using EcommerceSecurityApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -106,6 +107,133 @@ public class AdminController : ControllerBase
             username = user.Username,
             isActive = user.IsActive,
             message = $"{actionText}: Tài khoản '{user.Username}' hiện {(user.IsActive ? "ĐANG HOẠT ĐỘNG" : "ĐÃ BỊ ĐÌNH CHỈ / KHÓA")}!"
+        });
+    }
+
+    /// <summary>
+    /// Xóa vĩnh viễn tài khoản người dùng (Chỉ Admin, bảo vệ không tự xóa chính mình hoặc Admin gốc)
+    /// </summary>
+    [HttpDelete("users/{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        int.TryParse(currentUserIdClaim, out int currentUserId);
+
+        if (id == currentUserId)
+        {
+            return BadRequest(new { success = false, message = "Bạn không thể tự xóa tài khoản Quản trị viên đang đăng nhập của chính mình!" });
+        }
+
+        var user = await _context.Users
+            .Include(u => u.UserRoles)
+            .FirstOrDefaultAsync(u => u.Id == id);
+
+        if (user == null)
+        {
+            return NotFound(new { success = false, message = $"Không tìm thấy người dùng có ID {id}." });
+        }
+
+        if (user.Username.Equals("admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { success = false, message = "Không thể xóa tài khoản Quản trị viên hệ thống mặc định!" });
+        }
+
+        var deletedUsername = user.Username;
+        var deletedEmail = user.Email;
+
+        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+        if (_context.Database.IsRelational())
+        {
+            transaction = await _context.Database.BeginTransactionAsync();
+        }
+
+        try
+        {
+            // Xử lý sạch các đơn hàng liên quan (tránh lỗi ràng buộc khóa ngoại Orders -> Users)
+            var userOrders = await _context.Orders
+                .Include(o => o.OrderItems)
+                .Where(o => o.UserId == id)
+                .ToListAsync();
+
+            if (userOrders.Count > 0)
+            {
+                var orderItems = userOrders.SelectMany(o => o.OrderItems).ToList();
+                var pendingItems = userOrders
+                    .Where(o => o.Status == "Pending" || o.Status == "Processing")
+                    .SelectMany(o => o.OrderItems)
+                    .ToList();
+
+                if (pendingItems.Count > 0)
+                {
+                    var productIds = pendingItems.Select(i => i.ProductId).Distinct().ToList();
+                    var products = await _context.Products.Where(p => productIds.Contains(p.Id)).ToListAsync();
+                    foreach (var item in pendingItems)
+                    {
+                        var product = products.FirstOrDefault(p => p.Id == item.ProductId);
+                        if (product != null)
+                        {
+                            product.Stock += item.Quantity;
+                        }
+                    }
+                }
+
+                if (orderItems.Count > 0)
+                {
+                    _context.OrderItems.RemoveRange(orderItems);
+                }
+                _context.Orders.RemoveRange(userOrders);
+            }
+
+            if (user.UserRoles.Count > 0)
+            {
+                _context.UserRoles.RemoveRange(user.UserRoles);
+            }
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
+        }
+        catch
+        {
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync();
+            }
+            throw;
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
+
+        await _securityLogService.LogIncidentAsync(
+            incidentType: "ACCOUNT_DELETED_BY_ADMIN",
+            severity: "Warning",
+            description: $"Quản trị viên '{User.Identity?.Name}' đã XÓA VĨNH VIỄN tài khoản '{deletedUsername}' (ID: {id}, Email: {deletedEmail}).",
+            targetResource: $"DELETE /api/admin/users/{id}",
+            userId: id,
+            username: deletedUsername,
+            ipAddress: ClientInfoHelper.GetClientIpAddress(HttpContext)
+        );
+
+        _logger.LogWarning("Quản trị viên {Admin} đã xóa tài khoản {Username} (ID: {Id}).", User.Identity?.Name, deletedUsername, id);
+
+        return Ok(new
+        {
+            success = true,
+            userId = id,
+            username = deletedUsername,
+            message = $"Đã xóa vĩnh viễn tài khoản '{deletedUsername}' (#{id}) khỏi hệ thống!"
         });
     }
 
